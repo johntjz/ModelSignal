@@ -1,1 +1,325 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusQuant | Multi-Asset Algorithmic Dashboard</title>
+    <script src="https://cloudflare.com"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0f1d;
+            --bg-secondary: #111827;
+            --bg-card: #1f2937;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --sig-green: #10b981;
+            --sig-red: #ef4444;
+            --border: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--accent-cyan);
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-text p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .status-badge {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--sig-green);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(650px, 1fr));
+            gap: 2rem;
+        }
+
+        @media(max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .asset-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .asset-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .btc-icon { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .soxl-icon { background-color: rgba(6, 182, 212, 0.1); color: var(--accent-cyan); }
+
+        .asset-name h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .asset-name span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .signal-block {
+            text-align: right;
+        }
+
+        .signal-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .signal-value {
+            font-weight: 800;
+            font-size: 1.25rem;
+        }
+
+        .signal-value.buy { color: var(--sig-green); }
+        .signal-value.sell { color: var(--sig-red); }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .metric-box {
+            background-color: var(--bg-card);
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .metric-val {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .mock-chart {
+            height: 180px;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            position: relative;
+            background-color: rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .mock-graph-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.15;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .strategy-notes {
+            font-size: 0.85rem;
+            background-color: var(--bg-card);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-purple);
+        }
+
+        .strategy-notes p strong {
+            color: var(--accent-cyan);
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo"><i class="fa-solid fa-wave-square"></i> NEXUSQUANT</div>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Backtests</a>
+            <a href="#">Correlations</a>
+            <a href="#">API Docs</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="hero-banner">
+            <div class="hero-text">
+                <h1>System Overview</h1>
+                <p>Real-time systemic signals mapping macro liquidity (BTC) to leveraged equity beta (SOXL).</p>
+            </div>
+            <div class="status-badge">
+                <i class="fa-solid fa-circle-check"></i> Live Execution Engine Active
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <!-- BTC/USD Strategy Card -->
+            <div class="asset-card">
+                <div class="card-header">
+                    <div class="asset-title">
+                        <div class="asset-icon btc-icon">
+                            <i class="fa-brands fa-bitcoin"></i>
+                        </div>
+                        <div class="asset-name">
+                            <h2>Bitcoin / USD</h2>
+                            <span>Macro Liquidity & Risk Anchor</span>
+                        </div>
+                    </div>
+                    <div class="signal-block">
+                        <div class="signal-label">Model Signal</div>
+                        <div class="signal-value buy">BULLISH SYSTEM</div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <div class="metric-label">Z-Score (20D)</div>
+                        <div class="metric-val">+1.42</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Volatility (Annual)</div>
+                        <div class="metric-val">46.3%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Trend Intensity</div>
+                        <div class="metric-val" style="color: var(--sig-green)">High (0.78)</div>
+                    </div>
+                </div>
+
+                <div class="mock-chart">
+                    <div class="mock-graph-lines"></div>
+                    <i class="fa-solid fa-chart-line" style="margin-right: 8px;"></i> [ Interactive TradingView/Chart Widget Engine ]
+                </div>
+
+                <div class="strategy-notes">
+                    <p><strong>Alpha Logic:</strong> Tracking daily order-flow imbalances and Mean Reversion deviations via 20-period rolling bands. Current configuration favors accumulation on intraday structural retests.</p>
+                </div>
+            </div>
+
+            <!-- SOXL ETF Strategy Card -->
+            <div class="asset-card">
+                <div class="card-header">
+                    <div class="asset-title">
+                        <div class="asset-icon soxl-icon">
+                            <i class="fa-solid fa-microchip"></i>
