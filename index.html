@@ -1,325 +1,347 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusQuant | Multi-Asset Algorithmic Dashboard</title>
-    <script src="https://cloudflare.com"></script>
-    <style>
-        :root {
-            --bg-primary: #0a0f1d;
-            --bg-secondary: #111827;
-            --bg-card: #1f2937;
-            --accent-cyan: #06b6d4;
-            --accent-purple: #8b5cf6;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --sig-green: #10b981;
-            --sig-red: #ef4444;
-            --border: #374151;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            line-height: 1.5;
-        }
-
-        header {
-            background-color: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.25rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-            background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        nav a {
-            color: var(--text-muted);
-            text-decoration: none;
-            margin-left: 1.5rem;
-            font-size: 0.9rem;
-            transition: color 0.2s;
-        }
-
-        nav a:hover, nav a.active {
-            color: var(--accent-cyan);
-        }
-
-        main {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .hero-banner {
-            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .hero-text h1 {
-            font-size: 1.75rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .hero-text p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        .status-badge {
-            background-color: rgba(16, 185, 129, 0.1);
-            color: var(--sig-green);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(650px, 1fr));
-            gap: 2rem;
-        }
-
-        @media(max-width: 768px) {
-            .grid-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .asset-card {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1rem;
-        }
-
-        .asset-title {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .asset-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .btc-icon { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-        .soxl-icon { background-color: rgba(6, 182, 212, 0.1); color: var(--accent-cyan); }
-
-        .asset-name h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-
-        .asset-name span {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .signal-block {
-            text-align: right;
-        }
-
-        .signal-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .signal-value {
-            font-weight: 800;
-            font-size: 1.25rem;
-        }
-
-        .signal-value.buy { color: var(--sig-green); }
-        .signal-value.sell { color: var(--sig-red); }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-        }
-
-        .metric-box {
-            background-color: var(--bg-card);
-            padding: 0.75rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .metric-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .metric-val {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 0.25rem;
-        }
-
-        .mock-chart {
-            height: 180px;
-            border: 1px dashed var(--border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            position: relative;
-            background-color: rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .mock-graph-lines {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0.15;
-            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-
-        .strategy-notes {
-            font-size: 0.85rem;
-            background-color: var(--bg-card);
-            padding: 1rem;
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-purple);
-        }
-
-        .strategy-notes p strong {
-            color: var(--accent-cyan);
-        }
-
-        footer {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            border-top: 1px solid var(--border);
-            margin-top: 4rem;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ModelSignal // AI vs. Reality in High-Entropy Markets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body { background-color: #080b11; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
 </head>
-<body>
+<body class="min-h-screen antialiased p-4 md:p-6 max-w-6xl mx-auto space-y-6">
 
-    <header>
-        <div class="logo"><i class="fa-solid fa-wave-square"></i> NEXUSQUANT</div>
-        <nav>
-            <a href="#" class="active">Dashboard</a>
-            <a href="#">Backtests</a>
-            <a href="#">Correlations</a>
-            <a href="#">API Docs</a>
-        </nav>
-    </header>
+  <!-- HEADER -->
+  <header class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <h1 class="text-base font-bold tracking-wider text-white uppercase">MODELSIGNAL // AI VS. REALITY</h1>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">High-Entropy Benchmark: BTC-USD (7D/wk) & SOXL 3x ETF (5D/wk) — Signal, Inference & Decision Audit</p>
+    </div>
 
-    <main>
-        <div class="hero-banner">
-            <div class="hero-text">
-                <h1>System Overview</h1>
-                <p>Real-time systemic signals mapping macro liquidity (BTC) to leveraged equity beta (SOXL).</p>
+    <div class="flex items-center gap-3 text-xs">
+      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+        <span class="text-slate-400">MEAN ACCURACY:</span>
+        <span id="statAccuracy" class="text-emerald-400 font-bold ml-1">--%</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+        <span class="text-slate-400">DECISION WIN RATE:</span>
+        <span id="statWinRate" class="text-cyan-400 font-bold ml-1">--%</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ACTIVE DECISIONS: BTC-USD & SOXL SIDE-BY-SIDE -->
+  <section id="latestCards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></section>
+
+  <!-- CHART: MODEL INFERENCE E[Y] VS REALITY -->
+  <section class="bg-slate-900/70 border border-slate-800 rounded-lg p-4">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <span class="text-xs uppercase tracking-wider text-slate-400">Model Expected Price E[Y] vs. Realized Price</span>
+      <div class="flex gap-2 text-xs">
+        <button onclick="renderChart('BTC-USD')" id="btnChartBTC" class="px-2.5 py-1 rounded border">BTC-USD (7D)</button>
+        <button onclick="renderChart('SOXL')" id="btnChartSOXL" class="px-2.5 py-1 rounded border">SOXL 3X (5D)</button>
+      </div>
+    </div>
+    <div class="h-60 w-full">
+      <canvas id="signalChart"></canvas>
+    </div>
+  </section>
+
+  <!-- HISTORICAL AUDIT LEDGER -->
+  <section class="bg-slate-900/70 border border-slate-800 rounded-lg overflow-hidden">
+    <div class="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-xs uppercase tracking-wider text-slate-400">Chronological Inference & Decision Ledger</h2>
+      <div class="flex gap-1.5 text-xs" id="filterBtns">
+        <button onclick="setFilter('ALL')" data-f="ALL" class="px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300">ALL</button>
+        <button onclick="setFilter('BTC-USD')" data-f="BTC-USD" class="px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400">BTC-USD</button>
+        <button onclick="setFilter('SOXL')" data-f="SOXL" class="px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400">SOXL</button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-slate-800 text-slate-500 uppercase text-[11px] bg-slate-950/60">
+            <th class="p-3">Date / UTC</th>
+            <th class="p-3">Asset</th>
+            <th class="p-3">Actual Price</th>
+            <th class="p-3">Next E[Y] (Band)</th>
+            <th class="p-3">Prob Ratio</th>
+            <th class="p-3">Decision</th>
+            <th class="p-3">Processed Signal & Causal Inference</th>
+            <th class="p-3">Prior Audit (vs Reality)</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerBody" class="divide-y divide-slate-800/70"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    // =========================================================================
+    // DAILY LEDGER DATA: PASTE NEW DAILY JSON OBJECTS AT THE TOP OF THIS ARRAY
+    // =========================================================================
+    const LEDGER = [
+      {
+        date: "2026-10-27 14:29",
+        asset: "SOXL",
+        price: 96.33,
+        change_pct: "+6.44%",
+        expected_price: 94.80,
+        band: "$91.00–$99.50",
+        prob_ratio: "0.83x (25% Bull / 30% Bear)",
+        decision: "TRIM / TAKE PROFIT",
+        levels: "Trim: $96.30–$98.00 | Reload: $89.00",
+        signal_inference: "SOXL (+6.44%) outpaced TQQQ (+1.55%) by 4.15x while S&P 500 stayed flat (+0.13%). Stalled at $97.97 high directly into $98–$101 trapped retail supply ahead of Wed FOMC & MSFT/GOOGL earnings. Easy +19.2% bounce from $80.83 is complete.",
+        prior_expected: 93.85,
+        prior_accuracy: 97.43,
+        audit_result: "WIN",
+        audit_note: "Hit $97.20 Bull target (actual high $97.97); captured +6.44% continuation."
+      },
+      {
+        date: "2026-10-27 14:28",
+        asset: "BTC-USD",
+        price: 80008.01,
+        change_pct: "+0.71%",
+        expected_price: 80250.00,
+        band: "$79,350–$81,200",
+        prob_ratio: "2.25x (45% Bull / 20% Bear)",
+        decision: "HOLD / ADD > $80,150",
+        levels: "Trigger: >$80,150 | Stop: <$79,250",
+        signal_inference: "Reclaimed $80,008 while 24h volume fell a 4th straight time ($27.9B -> $25.73B), confirming seller exhaustion below $79,350. CMC VWAP ($79,787) lags spot by -$221; holding $80K forces short cover toward $81,200.",
+        prior_expected: 79575.00,
+        prior_accuracy: 99.46,
+        audit_result: "WIN",
+        audit_note: "Held 80% core at $79,441; captured +$567 rebound back over $80K."
+      },
+      {
+        date: "2026-10-27 10:17",
+        asset: "BTC-USD",
+        price: 79441.08,
+        change_pct: "-0.71%",
+        expected_price: 79575.00,
+        band: "$78,200–$80,700",
+        prob_ratio: "1.27x (28% Bull / 22% Bear)",
+        decision: "HOLD / BID $79,265",
+        levels: "Trigger: >$80,105 | Stop: <$76,000",
+        signal_inference: "Intraday higher-low held at $79,350.88 vs prior $79,260.02 on contracting $25.81B volume. Damped bull odds to 28% due to lower turnover.",
+        prior_expected: 79812.00,
+        prior_accuracy: 99.53,
+        audit_result: "WIN",
+        audit_note: "Refused market buy at $79,502; 20% cash buffer saved +6.1 bps."
+      },
+      {
+        date: "2026-10-26 20:00",
+        asset: "SOXL",
+        price: 90.50,
+        change_pct: "+8.31%",
+        expected_price: 93.85,
+        band: "$89.50–$97.50",
+        prob_ratio: "2.25x (45% Bull / 20% Bear)",
+        decision: "HOLD FOR $97 TRIM",
+        levels: "Target: $97.20 | Stop: <$84.20",
+        signal_inference: "Anthropic S-1 ($750B compute commitments, $161B to AVGO) triggered violent short cover on 41.43% turnover ($9.04B). Momentum carries into $95–$98 resistance.",
+        prior_expected: 89.20,
+        prior_accuracy: 98.56,
+        audit_result: "WIN",
+        audit_note: "Called early-week squeeze from $83.56 to $87.50–$92.00; closed at $90.50."
+      },
+      {
+        date: "2026-10-26 23:51",
+        asset: "BTC-USD",
+        price: 79804.03,
+        change_pct: "+0.61%",
+        expected_price: 80145.00,
+        band: "$78,000–$81,400",
+        prob_ratio: "2.33x (35% Bull / 15% Bear)",
+        decision: "HOLD CORE",
+        levels: "Trigger: >$80,697 | Stop: <$74,000",
+        signal_inference: "53 days of negative Coinbase premium failed to break $79,260 floor; corporate treasuries absorbing US ETF outflows.",
+        prior_expected: 79410.00,
+        prior_accuracy: 99.51,
+        audit_result: "WIN",
+        audit_note: "Avoided panic sell at $79,322; captured +$482 bounce."
+      },
+      {
+        date: "2026-10-23 16:00",
+        asset: "SOXL",
+        price: 83.56,
+        change_pct: "+1.77%",
+        expected_price: 89.20,
+        band: "$82.00–$92.00",
+        prob_ratio: "3.67x (55% Bull / 15% Bear)",
+        decision: "LONG / ACCUMULATE",
+        levels: "Target: $91.50 | Stop: <$80.50",
+        signal_inference: "41.22% turnover ($7.81B) failed to break Thursday's $80.83 double-bottom low. Oversold RSI (<20) sets up pre-Fed short squeeze.",
+        prior_expected: 83.85,
+        prior_accuracy: 99.65,
+        audit_result: "WIN",
+        audit_note: "Predicted stabilization around $83.85 after -20.5% crash; closed at $83.56."
+      }
+    ];
+
+    let activeFilter = 'ALL';
+    let chartInstance = null;
+
+    const fmtPrice = (val, asset) =>
+      asset === 'BTC-USD'
+        ? '$' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '$' + Number(val).toFixed(2);
+
+    const decisionBadge = (dec) => {
+      if (dec.includes('TRIM') || dec.includes('SELL')) return 'bg-amber-500/15 text-amber-300 border-amber-500/40';
+      if (dec.includes('LONG') || dec.includes('BUY') || dec.includes('ADD')) return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
+      return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40';
+    };
+
+    function init() {
+      // Global stats
+      const audited = LEDGER.filter(x => x.prior_accuracy != null);
+      const meanAcc = audited.reduce((s, x) => s + x.prior_accuracy, 0) / (audited.length || 1);
+      const wins = audited.filter(x => x.audit_result === 'WIN').length;
+      document.getElementById('statAccuracy').textContent = meanAcc.toFixed(2) + '%';
+      document.getElementById('statWinRate').textContent = Math.round((wins / (audited.length || 1)) * 100) + '% (' + wins + '/' + audited.length + ')';
+
+      renderTopCards();
+      renderTable();
+      renderChart('SOXL');
+    }
+
+    function renderTopCards() {
+      const latestBTC = LEDGER.find(x => x.asset === 'BTC-USD');
+      const latestSOXL = LEDGER.find(x => x.asset === 'SOXL');
+
+      document.getElementById('latestCards').innerHTML = [latestBTC, latestSOXL].map(item => `
+        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div>
+              <span class="text-[11px] text-slate-400 uppercase">${item.asset === 'BTC-USD' ? '7D/WK CRYPTO' : '5D/WK 3X SEMI ETF'} // ${item.date} UTC</span>
+              <div class="flex items-baseline gap-2 mt-0.5">
+                <span class="text-lg font-bold text-white">${item.asset}: ${fmtPrice(item.price, item.asset)}</span>
+                <span class="text-xs ${item.change_pct.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${item.change_pct}</span>
+              </div>
             </div>
-            <div class="status-badge">
-                <i class="fa-solid fa-circle-check"></i> Live Execution Engine Active
+            <span class="text-xs font-bold px-2.5 py-1 rounded border ${decisionBadge(item.decision)}">${item.decision}</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-xs bg-slate-950/70 p-2.5 rounded border border-slate-800/80">
+            <div>
+              <span class="text-[10px] text-slate-500 block uppercase">Next 24H E[Y]</span>
+              <span class="font-bold text-cyan-400">${fmtPrice(item.expected_price, item.asset)}</span>
             </div>
+            <div>
+              <span class="text-[10px] text-slate-500 block uppercase">Expected Band</span>
+              <span class="font-bold text-slate-200">${item.band}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-500 block uppercase">Prob Ratio</span>
+              <span class="font-bold text-purple-300">${item.prob_ratio.split(' ')[0]}</span>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed"><strong class="text-slate-100">Inference:</strong> ${item.signal_inference}</p>
+
+          <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60 text-slate-400">
+            <span>Levels: <strong class="text-slate-200">${item.levels}</strong></span>
+            <span class="text-emerald-400">T-1 Acc: <strong>${item.prior_accuracy}% (${item.audit_result})</strong></span>
+          </div>
         </div>
+      `).join('');
+    }
 
-        <div class="grid-container">
-            <!-- BTC/USD Strategy Card -->
-            <div class="asset-card">
-                <div class="card-header">
-                    <div class="asset-title">
-                        <div class="asset-icon btc-icon">
-                            <i class="fa-brands fa-bitcoin"></i>
-                        </div>
-                        <div class="asset-name">
-                            <h2>Bitcoin / USD</h2>
-                            <span>Macro Liquidity & Risk Anchor</span>
-                        </div>
-                    </div>
-                    <div class="signal-block">
-                        <div class="signal-label">Model Signal</div>
-                        <div class="signal-value buy">BULLISH SYSTEM</div>
-                    </div>
-                </div>
+    function setFilter(f) {
+      activeFilter = f;
+      document.querySelectorAll('#filterBtns button').forEach(b => {
+        const active = b.dataset.f === f;
+        b.className = active
+          ? 'px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
+          : 'px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400';
+      });
+      renderTable();
+    }
 
-                <div class="metrics-grid">
-                    <div class="metric-box">
-                        <div class="metric-label">Z-Score (20D)</div>
-                        <div class="metric-val">+1.42</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">Volatility (Annual)</div>
-                        <div class="metric-val">46.3%</div>
-                    </div>
-                    <div class="metric-box">
-                        <div class="metric-label">Trend Intensity</div>
-                        <div class="metric-val" style="color: var(--sig-green)">High (0.78)</div>
-                    </div>
-                </div>
+    function renderTable() {
+      const rows = activeFilter === 'ALL' ? LEDGER : LEDGER.filter(x => x.asset === activeFilter);
+      document.getElementById('ledgerBody').innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-800/30 align-top">
+          <td class="p-3 whitespace-nowrap text-slate-400">${r.date}</td>
+          <td class="p-3 font-bold text-white whitespace-nowrap">${r.asset}</td>
+          <td class="p-3 whitespace-nowrap">
+            <span class="font-bold text-white">${fmtPrice(r.price, r.asset)}</span>
+            <span class="block text-[10px] ${r.change_pct.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${r.change_pct}</span>
+          </td>
+          <td class="p-3 whitespace-nowrap">
+            <span class="font-bold text-cyan-400">${fmtPrice(r.expected_price, r.asset)}</span>
+            <span class="block text-[10px] text-slate-500">${r.band}</span>
+          </td>
+          <td class="p-3 whitespace-nowrap text-purple-300">${r.prob_ratio}</td>
+          <td class="p-3 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${decisionBadge(r.decision)}">${r.decision}</span>
+            <span class="block text-[10px] text-slate-500 mt-1">${r.levels}</span>
+          </td>
+          <td class="p-3 text-slate-300 max-w-md leading-relaxed">${r.signal_inference}</td>
+          <td class="p-3 whitespace-nowrap">
+            <span class="font-bold text-emerald-400">${r.prior_accuracy}% ACC (${r.audit_result})</span>
+            <span class="block text-[10px] text-slate-400">Prior E[Y]: ${fmtPrice(r.prior_expected, r.asset)}</span>
+            <span class="block text-[10px] text-slate-500 max-w-[200px] truncate" title="${r.audit_note}">${r.audit_note}</span>
+          </td>
+        </tr>
+      `).join('');
+    }
 
-                <div class="mock-chart">
-                    <div class="mock-graph-lines"></div>
-                    <i class="fa-solid fa-chart-line" style="margin-right: 8px;"></i> [ Interactive TradingView/Chart Widget Engine ]
-                </div>
+    function renderChart(asset) {
+      document.getElementById('btnChartBTC').className = asset === 'BTC-USD'
+        ? 'px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
+        : 'px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400';
+      document.getElementById('btnChartSOXL').className = asset === 'SOXL'
+        ? 'px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
+        : 'px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400';
 
-                <div class="strategy-notes">
-                    <p><strong>Alpha Logic:</strong> Tracking daily order-flow imbalances and Mean Reversion deviations via 20-period rolling bands. Current configuration favors accumulation on intraday structural retests.</p>
-                </div>
-            </div>
+      const series = LEDGER.filter(x => x.asset === asset).slice().reverse();
+      const ctx = document.getElementById('signalChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
 
-            <!-- SOXL ETF Strategy Card -->
-            <div class="asset-card">
-                <div class="card-header">
-                    <div class="asset-title">
-                        <div class="asset-icon soxl-icon">
-                            <i class="fa-solid fa-microchip"></i>
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: series.map(x => x.date.slice(5)),
+          datasets: [
+            {
+              label: `${asset} Actual Price`,
+              data: series.map(x => x.price),
+              borderColor: '#f8fafc',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              tension: 0.2
+            },
+            {
+              label: `Prior Model Expected E[Y]`,
+              data: series.map(x => x.prior_expected),
+              borderColor: '#22d3ee',
+              borderDash: [4, 4],
+              borderWidth: 2,
+              pointRadius: 4,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'monospace', size: 11 } } } },
+          scales: {
+            x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
