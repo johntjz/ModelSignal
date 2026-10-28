@@ -3,101 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ModelSignal // AI vs. Reality in High-Entropy Markets</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>ModelSignal // Actionable AI Signals</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
-    body { background-color: #080b11; color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    body { background-color: #06090e; color: #f1f5f9; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
   </style>
 </head>
-<body class="min-h-screen antialiased p-4 md:p-6 max-w-6xl mx-auto space-y-6">
+<body class="min-h-screen antialiased p-4 md:p-6 max-w-5xl mx-auto space-y-5">
 
-  <!-- HEADER -->
-  <header class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <h1 class="text-base font-bold tracking-wider text-white uppercase">MODELSIGNAL // AI VS. REALITY</h1>
-      </div>
-      <p class="text-xs text-slate-400 mt-1">High-Entropy Benchmark: BTC-USD (7D/wk) & SOXL 3x ETF (5D/wk) — Signal, Inference & Decision Audit</p>
+  <!-- TOP BAR -->
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+    <div class="flex items-center gap-2.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <h1 class="text-sm font-bold tracking-wider text-white uppercase">MODELSIGNAL</h1>
+      <span class="text-xs text-slate-500">// ACTIONABLE SIGNALS ONLY</span>
     </div>
 
-    <div class="flex items-center gap-3 text-xs">
-      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-        <span class="text-slate-400">MEAN ACCURACY:</span>
+    <div class="flex items-center gap-2 text-xs">
+      <div class="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded">
+        <span class="text-slate-400">ACCURACY:</span>
         <span id="statAccuracy" class="text-emerald-400 font-bold ml-1">--%</span>
       </div>
-      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-        <span class="text-slate-400">DECISION WIN RATE:</span>
+      <div class="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded">
+        <span class="text-slate-400">WIN RATE:</span>
         <span id="statWinRate" class="text-cyan-400 font-bold ml-1">--%</span>
       </div>
     </div>
   </header>
 
-  <!-- ACTIVE DECISIONS: BTC-USD & SOXL SIDE-BY-SIDE -->
-  <section id="latestCards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></section>
+  <!-- PRIMARY DELIVERABLE: LIVE ACTIONABLE SIGNALS -->
+  <section id="signalCards" class="grid grid-cols-1 md:grid-cols-2 gap-4"></section>
 
-  <!-- CHART: MODEL INFERENCE E[Y] VS REALITY -->
-  <section class="bg-slate-900/70 border border-slate-800 rounded-lg p-4">
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <span class="text-xs uppercase tracking-wider text-slate-400">Model Expected Price E[Y] vs. Realized Price</span>
-      <div class="flex gap-2 text-xs">
-        <button onclick="renderChart('BTC-USD')" id="btnChartBTC" class="px-2.5 py-1 rounded border">BTC-USD (7D)</button>
-        <button onclick="renderChart('SOXL')" id="btnChartSOXL" class="px-2.5 py-1 rounded border">SOXL 3X (5D)</button>
+  <!-- PRICE VS MODEL TARGET CHART -->
+  <section class="bg-slate-900/60 border border-slate-800 rounded-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-[11px] uppercase tracking-wider text-slate-400">Actual Price vs. Model Target E[Y]</span>
+      <div class="flex gap-1.5 text-xs">
+        <button onclick="renderChart('BTC-USD')" id="btnChartBTC" class="px-2.5 py-0.5 rounded border">BTC-USD</button>
+        <button onclick="renderChart('SOXL')" id="btnChartSOXL" class="px-2.5 py-0.5 rounded border">SOXL</button>
       </div>
     </div>
-    <div class="h-60 w-full">
+    <div class="h-48 w-full">
       <canvas id="signalChart"></canvas>
     </div>
   </section>
 
-  <!-- HISTORICAL AUDIT LEDGER -->
-  <section class="bg-slate-900/70 border border-slate-800 rounded-lg overflow-hidden">
-    <div class="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
-      <h2 class="text-xs uppercase tracking-wider text-slate-400">Chronological Inference & Decision Ledger</h2>
+  <!-- COMPACT AUDIT LOG (SINGLE-LINE ROWS, NO JUNK) -->
+  <section class="bg-slate-900/60 border border-slate-800 rounded-lg overflow-hidden">
+    <div class="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
+      <span class="text-[11px] uppercase tracking-wider text-slate-400">Signal & Accuracy Track Record</span>
       <div class="flex gap-1.5 text-xs" id="filterBtns">
-        <button onclick="setFilter('ALL')" data-f="ALL" class="px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300">ALL</button>
-        <button onclick="setFilter('BTC-USD')" data-f="BTC-USD" class="px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400">BTC-USD</button>
-        <button onclick="setFilter('SOXL')" data-f="SOXL" class="px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400">SOXL</button>
+        <button onclick="setFilter('ALL')" data-f="ALL" class="px-2 py-0.5 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300">ALL</button>
+        <button onclick="setFilter('BTC-USD')" data-f="BTC-USD" class="px-2 py-0.5 rounded border border-slate-800 bg-slate-950 text-slate-400">BTC-USD</button>
+        <button onclick="setFilter('SOXL')" data-f="SOXL" class="px-2 py-0.5 rounded border border-slate-800 bg-slate-950 text-slate-400">SOXL</button>
       </div>
     </div>
 
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse text-xs">
+      <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
         <thead>
-          <tr class="border-b border-slate-800 text-slate-500 uppercase text-[11px] bg-slate-950/60">
-            <th class="p-3">Date / UTC</th>
-            <th class="p-3">Asset</th>
-            <th class="p-3">Actual Price</th>
-            <th class="p-3">Next E[Y] (Band)</th>
-            <th class="p-3">Prob Ratio</th>
-            <th class="p-3">Decision</th>
-            <th class="p-3">Processed Signal & Causal Inference</th>
-            <th class="p-3">Prior Audit (vs Reality)</th>
+          <tr class="border-b border-slate-800 text-slate-500 uppercase text-[10px] bg-slate-950/70">
+            <th class="py-2.5 px-3">Date (UTC)</th>
+            <th class="py-2.5 px-3">Asset</th>
+            <th class="py-2.5 px-3">Actionable Signal</th>
+            <th class="py-2.5 px-3">Execution Levels</th>
+            <th class="py-2.5 px-3">Spot Price</th>
+            <th class="py-2.5 px-3">Next 24H E[Y]</th>
+            <th class="py-2.5 px-3">Ratio</th>
+            <th class="py-2.5 px-3">Prior Call Audit</th>
           </tr>
         </thead>
-        <tbody id="ledgerBody" class="divide-y divide-slate-800/70"></tbody>
+        <tbody id="ledgerBody" class="divide-y divide-slate-800/60"></tbody>
       </table>
     </div>
   </section>
 
   <script>
+    // =========================================================================
+    // LEDGER DATA: PASTE NEW DAILY OBJECTS HERE (AUTO-SORTED BY DATE)
+    // =========================================================================
     const LEDGER = [
       {
         date: "2026-10-28 00:13",
         asset: "SOXL",
         price: 101.08,
-        change_pct: "+11.69% (AH: $98.58)",
+        change_pct: "+11.69% (AH $98.58)",
         expected_price: 96.65,
-        band: "$89.50–$105.50",
-        prob_ratio: "0.83x (25% Bull / 30% Bear)",
-        decision: "STAND ASIDE / WAIT",
-        levels: "Reload: $90.50–$93.00 | Breakout: >$102.50",
-        signal_inference: "3x EOD rebalance pushed close to $101.08 (+11.69% on $9.02B vol / 37.79% turnover), but sellers immediately dumped AH -$2.50 (-2.47%) to $98.58–$98.77, rejecting the $100.98 50D MA ahead of Wed FOMC & MSFT/GOOGL earnings.",
+        prob_ratio: "0.83x",
+        decision: "STAND ASIDE / WAIT FOR DIP",
+        levels: "Reload: $90.50–$93.00 | Brk: >$102.50",
         prior_expected: 94.80,
         prior_accuracy: 93.79,
-        audit_result: "LOSS",
-        audit_note: "Trimmed too early at $96.33–$98.00; missed EOD rebalance squeeze to $101.08 (though AH fell back to $98.58)."
+        audit_result: "LOSS"
       },
       {
         date: "2026-10-28 00:13",
@@ -105,15 +104,12 @@
         price: 80667.52,
         change_pct: "+0.82%",
         expected_price: 80495.00,
-        band: "$79,100–$81,800",
-        prob_ratio: "1.20x (30% Bull / 25% Bear)",
-        decision: "HOLD / TRIM ADDS @ $81K",
-        levels: "Trim Add: $80.7K–$81.2K | Stop: <$78,800",
-        signal_inference: "Hit 24h high of $81,179.38 (within $21 of $81,200 target), but 24h volume fell -14.2% to $22.07B (5th straight drop). VWAP ($80,659) caught up to spot; low-volume test of $81.2K resistance favors pre-Fed consolidation.",
+        prob_ratio: "1.20x",
+        decision: "TRIM ADDS @ $81K / HOLD CORE",
+        levels: "Trim: $80.7K–$81.2K | Reload: $79.4K | Stop: <$78.8K",
         prior_expected: 80250.00,
         prior_accuracy: 99.48,
-        audit_result: "WIN",
-        audit_note: "Added >$80,150; price surged to $81,179.38 high and held $80,667.52."
+        audit_result: "WIN"
       },
       {
         date: "2026-10-27 14:29",
@@ -121,15 +117,12 @@
         price: 96.33,
         change_pct: "+6.44%",
         expected_price: 94.80,
-        band: "$91.00–$99.50",
-        prob_ratio: "0.83x (25% Bull / 30% Bear)",
+        prob_ratio: "0.83x",
         decision: "TRIM / TAKE PROFIT",
         levels: "Trim: $96.30–$98.00 | Reload: $89.00",
-        signal_inference: "SOXL (+6.44%) outpaced TQQQ (+1.55%) by 4.15x while S&P 500 stayed flat (+0.13%). Stalled at $97.97 high directly into $98–$101 trapped retail supply ahead of Wed FOMC & MSFT/GOOGL earnings. Easy +19.2% bounce from $80.83 is complete.",
         prior_expected: 93.85,
         prior_accuracy: 97.43,
-        audit_result: "WIN",
-        audit_note: "Hit $97.20 Bull target (actual high $97.97); captured +6.44% continuation."
+        audit_result: "WIN"
       },
       {
         date: "2026-10-27 14:28",
@@ -137,15 +130,12 @@
         price: 80008.01,
         change_pct: "+0.71%",
         expected_price: 80250.00,
-        band: "$79,350–$81,200",
-        prob_ratio: "2.25x (45% Bull / 20% Bear)",
+        prob_ratio: "2.25x",
         decision: "HOLD / ADD > $80,150",
-        levels: "Trigger: >$80,150 | Stop: <$79,250",
-        signal_inference: "Reclaimed $80,008 while 24h volume fell a 4th straight time ($27.9B -> $25.73B), confirming seller exhaustion below $79,350. CMC VWAP ($79,787) lags spot by -$221; holding $80K forces short cover toward $81,200.",
+        levels: "Add: >$80,150 | Stop: <$79,250",
         prior_expected: 79575.00,
         prior_accuracy: 99.46,
-        audit_result: "WIN",
-        audit_note: "Held 80% core at $79,441; captured +$567 rebound back over $80K."
+        audit_result: "WIN"
       },
       {
         date: "2026-10-27 10:17",
@@ -153,31 +143,12 @@
         price: 79441.08,
         change_pct: "-0.71%",
         expected_price: 79575.00,
-        band: "$78,200–$80,700",
-        prob_ratio: "1.27x (28% Bull / 22% Bear)",
+        prob_ratio: "1.27x",
         decision: "HOLD / BID $79,265",
-        levels: "Trigger: >$80,105 | Stop: <$76,000",
-        signal_inference: "Intraday higher-low held at $79,350.88 vs prior $79,260.02 on contracting $25.81B volume. Damped bull odds to 28% due to lower turnover.",
+        levels: "Bid: $79,265 | Stop: <$76,000",
         prior_expected: 79812.00,
         prior_accuracy: 99.53,
-        audit_result: "WIN",
-        audit_note: "Refused market buy at $79,502; 20% cash buffer saved +6.1 bps."
-      },
-      {
-        date: "2026-10-26 20:00",
-        asset: "SOXL",
-        price: 90.50,
-        change_pct: "+8.31%",
-        expected_price: 93.85,
-        band: "$89.50–$97.50",
-        prob_ratio: "2.25x (45% Bull / 20% Bear)",
-        decision: "HOLD FOR $97 TRIM",
-        levels: "Target: $97.20 | Stop: <$84.20",
-        signal_inference: "Anthropic S-1 ($750B compute commitments, $161B to AVGO) triggered violent short cover on 41.43% turnover ($9.04B). Momentum carries into $95–$98 resistance.",
-        prior_expected: 89.20,
-        prior_accuracy: 98.56,
-        audit_result: "WIN",
-        audit_note: "Called early-week squeeze from $83.56 to $87.50–$92.00; closed at $90.50."
+        audit_result: "WIN"
       },
       {
         date: "2026-10-26 23:51",
@@ -185,15 +156,25 @@
         price: 79804.03,
         change_pct: "+0.61%",
         expected_price: 80145.00,
-        band: "$78,000–$81,400",
-        prob_ratio: "2.33x (35% Bull / 15% Bear)",
+        prob_ratio: "2.33x",
         decision: "HOLD CORE",
-        levels: "Trigger: >$80,697 | Stop: <$74,000",
-        signal_inference: "53 days of negative Coinbase premium failed to break $79,260 floor; corporate treasuries absorbing US ETF outflows.",
+        levels: "Brk: >$80,697 | Stop: <$74,000",
         prior_expected: 79410.00,
         prior_accuracy: 99.51,
-        audit_result: "WIN",
-        audit_note: "Avoided panic sell at $79,322; captured +$482 bounce."
+        audit_result: "WIN"
+      },
+      {
+        date: "2026-10-26 20:00",
+        asset: "SOXL",
+        price: 90.50,
+        change_pct: "+8.31%",
+        expected_price: 93.85,
+        prob_ratio: "2.25x",
+        decision: "HOLD FOR $97 TRIM",
+        levels: "Target: $97.20 | Stop: <$84.20",
+        prior_expected: 89.20,
+        prior_accuracy: 98.56,
+        audit_result: "WIN"
       },
       {
         date: "2026-10-23 16:00",
@@ -201,15 +182,12 @@
         price: 83.56,
         change_pct: "+1.77%",
         expected_price: 89.20,
-        band: "$82.00–$92.00",
-        prob_ratio: "3.67x (55% Bull / 15% Bear)",
+        prob_ratio: "3.67x",
         decision: "LONG / ACCUMULATE",
         levels: "Target: $91.50 | Stop: <$80.50",
-        signal_inference: "41.22% turnover ($7.81B) failed to break Thursday's $80.83 double-bottom low. Oversold RSI (<20) sets up pre-Fed short squeeze.",
         prior_expected: 83.85,
         prior_accuracy: 99.65,
-        audit_result: "WIN",
-        audit_note: "Predicted stabilization around $83.85 after -20.5% crash; closed at $83.56."
+        audit_result: "WIN"
       }
     ];
 
@@ -221,63 +199,65 @@
         ? '$' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : '$' + Number(val).toFixed(2);
 
-    const decisionBadge = (dec) => {
-      if (dec.includes('TRIM') || dec.includes('SELL')) return 'bg-amber-500/15 text-amber-300 border-amber-500/40';
-      if (dec.includes('LONG') || dec.includes('BUY') || dec.includes('ADD')) return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40';
-      return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40';
+    const badgeStyle = (dec) => {
+      if (dec.includes('TRIM') || dec.includes('STAND ASIDE') || dec.includes('WAIT'))
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/50';
+      if (dec.includes('LONG') || dec.includes('BUY') || dec.includes('ADD'))
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50';
+      return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50';
     };
 
-    const auditColor = (res) => res === 'WIN' ? 'text-emerald-400' : 'text-rose-400';
-
     function init() {
+      // Auto-sort newest first so order never breaks
+      LEDGER.sort((a, b) => b.date.localeCompare(a.date));
+
       const audited = LEDGER.filter(x => x.prior_accuracy != null);
       const meanAcc = audited.reduce((s, x) => s + x.prior_accuracy, 0) / (audited.length || 1);
       const wins = audited.filter(x => x.audit_result === 'WIN').length;
+
       document.getElementById('statAccuracy').textContent = meanAcc.toFixed(2) + '%';
       document.getElementById('statWinRate').textContent = Math.round((wins / (audited.length || 1)) * 100) + '% (' + wins + '/' + audited.length + ')';
 
-      renderTopCards();
+      renderSignalCards();
       renderTable();
-      renderChart('SOXL');
+      renderChart('BTC-USD');
     }
 
-    function renderTopCards() {
+    function renderSignalCards() {
       const latestBTC = LEDGER.find(x => x.asset === 'BTC-USD');
       const latestSOXL = LEDGER.find(x => x.asset === 'SOXL');
 
-      document.getElementById('latestCards').innerHTML = [latestBTC, latestSOXL].map(item => `
-        <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-4 space-y-3">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-            <div>
-              <span class="text-[11px] text-slate-400 uppercase">${item.asset === 'BTC-USD' ? '7D/WK CRYPTO' : '5D/WK 3X SEMI ETF'} // ${item.date} UTC</span>
-              <div class="flex items-baseline gap-2 mt-0.5">
-                <span class="text-lg font-bold text-white">${item.asset}: ${fmtPrice(item.price, item.asset)}</span>
-                <span class="text-xs ${item.change_pct.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${item.change_pct}</span>
-              </div>
-            </div>
-            <span class="text-xs font-bold px-2.5 py-1 rounded border ${decisionBadge(item.decision)}">${item.decision}</span>
+      document.getElementById('signalCards').innerHTML = [latestBTC, latestSOXL].map(item => `
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400">${item.asset} // ${item.date} UTC</span>
+            <span class="text-[11px] font-bold ${item.audit_result === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
+              LAST CALL: ${item.audit_result} (${item.prior_accuracy}%)
+            </span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 text-xs bg-slate-950/70 p-2.5 rounded border border-slate-800/80">
+          <!-- PRIMARY ACTIONABLE SIGNAL -->
+          <div class="p-3 rounded border ${badgeStyle(item.decision)}">
+            <div class="text-[10px] uppercase tracking-wider opacity-75">Actionable Signal</div>
+            <div class="text-base font-bold mt-0.5">${item.decision}</div>
+            <div class="text-xs mt-1 opacity-90">${item.levels}</div>
+          </div>
+
+          <!-- CORE NUMBERS ONLY -->
+          <div class="grid grid-cols-3 gap-2 text-xs bg-slate-950 p-2.5 rounded border border-slate-800/80">
             <div>
-              <span class="text-[10px] text-slate-500 block uppercase">Next 24H E[Y]</span>
+              <span class="text-[10px] text-slate-500 block">SPOT PRICE</span>
+              <span class="font-bold text-white">${fmtPrice(item.price, item.asset)}</span>
+              <span class="text-[10px] block ${item.change_pct.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${item.change_pct}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-500 block">24H TARGET E[Y]</span>
               <span class="font-bold text-cyan-400">${fmtPrice(item.expected_price, item.asset)}</span>
             </div>
             <div>
-              <span class="text-[10px] text-slate-500 block uppercase">Expected Band</span>
-              <span class="font-bold text-slate-200">${item.band}</span>
+              <span class="text-[10px] text-slate-500 block">PROB RATIO</span>
+              <span class="font-bold text-purple-300">${item.prob_ratio}</span>
             </div>
-            <div>
-              <span class="text-[10px] text-slate-500 block uppercase">Prob Ratio</span>
-              <span class="font-bold text-purple-300">${item.prob_ratio.split(' ')[0]}</span>
-            </div>
-          </div>
-
-          <p class="text-xs text-slate-300 leading-relaxed"><strong class="text-slate-100">Inference:</strong> ${item.signal_inference}</p>
-
-          <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60 text-slate-400">
-            <span>Levels: <strong class="text-slate-200">${item.levels}</strong></span>
-            <span class="${auditColor(item.audit_result)}">T-1 Acc: <strong>${item.prior_accuracy}% (${item.audit_result})</strong></span>
           </div>
         </div>
       `).join('');
@@ -286,10 +266,9 @@
     function setFilter(f) {
       activeFilter = f;
       document.querySelectorAll('#filterBtns button').forEach(b => {
-        const active = b.dataset.f === f;
-        b.className = active
-          ? 'px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
-          : 'px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400';
+        b.className = b.dataset.f === f
+          ? 'px-2 py-0.5 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
+          : 'px-2 py-0.5 rounded border border-slate-800 bg-slate-950 text-slate-400';
       });
       renderTable();
     }
@@ -297,27 +276,20 @@
     function renderTable() {
       const rows = activeFilter === 'ALL' ? LEDGER : LEDGER.filter(x => x.asset === activeFilter);
       document.getElementById('ledgerBody').innerHTML = rows.map(r => `
-        <tr class="hover:bg-slate-800/30 align-top">
-          <td class="p-3 whitespace-nowrap text-slate-400">${r.date}</td>
-          <td class="p-3 font-bold text-white whitespace-nowrap">${r.asset}</td>
-          <td class="p-3 whitespace-nowrap">
-            <span class="font-bold text-white">${fmtPrice(r.price, r.asset)}</span>
-            <span class="block text-[10px] ${r.change_pct.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${r.change_pct}</span>
+        <tr class="hover:bg-slate-800/40">
+          <td class="py-2.5 px-3 text-slate-400">${r.date}</td>
+          <td class="py-2.5 px-3 font-bold text-white">${r.asset}</td>
+          <td class="py-2.5 px-3">
+            <span class="px-2 py-0.5 rounded border text-[11px] font-bold ${badgeStyle(r.decision)}">${r.decision}</span>
           </td>
-          <td class="p-3 whitespace-nowrap">
-            <span class="font-bold text-cyan-400">${fmtPrice(r.expected_price, r.asset)}</span>
-            <span class="block text-[10px] text-slate-500">${r.band}</span>
+          <td class="py-2.5 px-3 text-slate-300">${r.levels}</td>
+          <td class="py-2.5 px-3 font-bold text-white">
+            ${fmtPrice(r.price, r.asset)} <span class="text-[10px] font-normal ${r.change_pct.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${r.change_pct}</span>
           </td>
-          <td class="p-3 whitespace-nowrap text-purple-300">${r.prob_ratio}</td>
-          <td class="p-3 whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded border text-[10px] font-bold ${decisionBadge(r.decision)}">${r.decision}</span>
-            <span class="block text-[10px] text-slate-500 mt-1">${r.levels}</span>
-          </td>
-          <td class="p-3 text-slate-300 max-w-md leading-relaxed">${r.signal_inference}</td>
-          <td class="p-3 whitespace-nowrap">
-            <span class="font-bold ${auditColor(r.audit_result)}">${r.prior_accuracy}% ACC (${r.audit_result})</span>
-            <span class="block text-[10px] text-slate-400">Prior E[Y]: ${fmtPrice(r.prior_expected, r.asset)}</span>
-            <span class="block text-[10px] text-slate-500 max-w-[200px] truncate" title="${r.audit_note}">${r.audit_note}</span>
+          <td class="py-2.5 px-3 font-bold text-cyan-400">${fmtPrice(r.expected_price, r.asset)}</td>
+          <td class="py-2.5 px-3 text-purple-300">${r.prob_ratio}</td>
+          <td class="py-2.5 px-3 font-bold ${r.audit_result === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
+            ${r.audit_result} (${r.prior_accuracy}%)
           </td>
         </tr>
       `).join('');
@@ -325,11 +297,11 @@
 
     function renderChart(asset) {
       document.getElementById('btnChartBTC').className = asset === 'BTC-USD'
-        ? 'px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
-        : 'px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400';
+        ? 'px-2.5 py-0.5 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
+        : 'px-2.5 py-0.5 rounded border border-slate-800 bg-slate-950 text-slate-400';
       document.getElementById('btnChartSOXL').className = asset === 'SOXL'
-        ? 'px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
-        : 'px-2.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400';
+        ? 'px-2.5 py-0.5 rounded border border-cyan-500/50 bg-cyan-500/10 text-cyan-300'
+        : 'px-2.5 py-0.5 rounded border border-slate-800 bg-slate-950 text-slate-400';
 
       const series = LEDGER.filter(x => x.asset === asset).slice().reverse();
       const ctx = document.getElementById('signalChart').getContext('2d');
@@ -341,15 +313,15 @@
           labels: series.map(x => x.date.slice(5)),
           datasets: [
             {
-              label: `${asset} Actual Price`,
+              label: `${asset} Actual`,
               data: series.map(x => x.price),
               borderColor: '#f8fafc',
-              borderWidth: 2.5,
+              borderWidth: 2,
               pointRadius: 4,
               tension: 0.2
             },
             {
-              label: `Prior Model Expected E[Y]`,
+              label: `Model Target E[Y]`,
               data: series.map(x => x.prior_expected),
               borderColor: '#22d3ee',
               borderDash: [4, 4],
