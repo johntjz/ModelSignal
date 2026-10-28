@@ -87,6 +87,38 @@
     // =========================================================================
     const LEDGER = [
       {
+        date: "2026-10-28 00:13",
+        asset: "SOXL",
+        price: 101.08,
+        change_pct: "+11.69% (AH: $98.58)",
+        expected_price: 96.65,
+        band: "$89.50–$105.50",
+        prob_ratio: "0.83x (25% Bull / 30% Bear)",
+        decision: "STAND ASIDE / WAIT",
+        levels: "Reload: $90.50–$93.00 | Breakout: >$102.50",
+        signal_inference: "3x EOD rebalance pushed close to $101.08 (+11.69% on $9.02B vol / 37.79% turnover), but sellers immediately dumped AH -$2.50 (-2.47%) to $98.58–$98.77, rejecting the $100.98 50D MA ahead of Wed FOMC & MSFT/GOOGL earnings.",
+        prior_expected: 94.80,
+        prior_accuracy: 93.79,
+        audit_result: "LOSS",
+        audit_note: "Trimmed too early at $96.33–$98.00; missed EOD rebalance squeeze to $101.08 (though AH fell back to $98.58)."
+      },
+      {
+        date: "2026-10-28 00:13",
+        asset: "BTC-USD",
+        price: 80667.52,
+        change_pct: "+0.82%",
+        expected_price: 80495.00,
+        band: "$79,100–$81,800",
+        prob_ratio: "1.20x (30% Bull / 25% Bear)",
+        decision: "HOLD / TRIM ADDS @ $81K",
+        levels: "Trim Add: $80.7K–$81.2K | Stop: <$78,800",
+        signal_inference: "Hit 24h high of $81,179.38 (within $21 of $81,200 target), but 24h volume fell -14.2% to $22.07B (5th straight drop). VWAP ($80,659) caught up to spot; low-volume test of $81.2K resistance favors pre-Fed consolidation.",
+        prior_expected: 80250.00,
+        prior_accuracy: 99.48,
+        audit_result: "WIN",
+        audit_note: "Added >$80,150; price surged to $81,179.38 high and held $80,667.52."
+      },
+      {
         date: "2026-10-27 14:29",
         asset: "SOXL",
         price: 96.33,
