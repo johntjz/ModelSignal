@@ -82,9 +82,6 @@
   </section>
 
   <script>
-    // =========================================================================
-    // DAILY LEDGER DATA: PASTE NEW DAILY JSON OBJECTS AT THE TOP OF THIS ARRAY
-    // =========================================================================
     const LEDGER = [
       {
         date: "2026-10-28 00:13",
@@ -230,8 +227,9 @@
       return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40';
     };
 
+    const auditColor = (res) => res === 'WIN' ? 'text-emerald-400' : 'text-rose-400';
+
     function init() {
-      // Global stats
       const audited = LEDGER.filter(x => x.prior_accuracy != null);
       const meanAcc = audited.reduce((s, x) => s + x.prior_accuracy, 0) / (audited.length || 1);
       const wins = audited.filter(x => x.audit_result === 'WIN').length;
@@ -279,7 +277,7 @@
 
           <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60 text-slate-400">
             <span>Levels: <strong class="text-slate-200">${item.levels}</strong></span>
-            <span class="text-emerald-400">T-1 Acc: <strong>${item.prior_accuracy}% (${item.audit_result})</strong></span>
+            <span class="${auditColor(item.audit_result)}">T-1 Acc: <strong>${item.prior_accuracy}% (${item.audit_result})</strong></span>
           </div>
         </div>
       `).join('');
@@ -317,7 +315,7 @@
           </td>
           <td class="p-3 text-slate-300 max-w-md leading-relaxed">${r.signal_inference}</td>
           <td class="p-3 whitespace-nowrap">
-            <span class="font-bold text-emerald-400">${r.prior_accuracy}% ACC (${r.audit_result})</span>
+            <span class="font-bold ${auditColor(r.audit_result)}">${r.prior_accuracy}% ACC (${r.audit_result})</span>
             <span class="block text-[10px] text-slate-400">Prior E[Y]: ${fmtPrice(r.prior_expected, r.asset)}</span>
             <span class="block text-[10px] text-slate-500 max-w-[200px] truncate" title="${r.audit_note}">${r.audit_note}</span>
           </td>
