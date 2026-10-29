@@ -3,908 +3,229 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MODELSIGNAL // FORWARD INFERENCE ENGINE</title>
-  <!-- Tailwind CSS -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>ModelSignal // Parallel Action & Accuracy</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: JetBrains Mono & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            obsidian: '#080b10',
-            panel: '#0d121a',
-            panelAlt: '#111823',
-            borderSubtle: '#1c2636',
-          }
-        }
-      }
-    }
-  </script>
   <style>
     body {
-      background-color: #080b10;
-      color: #e2e8f0;
-      font-family: 'JetBrains Mono', monospace;
-      -webkit-font-smoothing: antialiased;
-    }
-    /* Custom subtle scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #080b10;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #334155;
+      background-color: #06090e;
+      color: #f1f5f9;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
   </style>
 </head>
-<body class="min-h-screen py-6 px-3 sm:px-5 selection:bg-emerald-500/30 selection:text-emerald-200">
+<body class="min-h-screen antialiased p-4 md:p-8 max-w-6xl mx-auto space-y-6">
 
-  <!-- STRICTLY VERTICAL SINGLE-COLUMN CONTAINER (MAX-WIDTH 680PX) -->
-  <main class="max-w-[680px] mx-auto flex flex-col gap-5">
-
-    <!-- ================================================================= -->
-    <!-- 1. TOP SUMMARY BAR & SYSTEM TRUST VERIFICATION                    -->
-    <!-- ================================================================= -->
-    <header class="bg-panel border border-borderSubtle rounded-lg p-4 flex flex-col gap-3.5 shadow-lg">
-      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-borderSubtle pb-3">
-        <div class="flex items-center gap-2.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
-          <h1 class="text-xs sm:text-sm font-bold tracking-wider text-white uppercase">
-            MODELSIGNAL <span class="text-slate-500 font-normal">// FORWARD INFERENCE ENGINE</span>
-          </h1>
-        </div>
-        <span id="global-timestamp" class="text-[11px] text-slate-400">
-          2026-10-29 00:39 UTC
-        </span>
+  <!-- MINIMAL HEADER -->
+  <header class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <div class="flex items-center gap-2.5">
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
+      <span class="text-xs text-slate-500">2026-10-29 13:40 UTC</span>
+    </div>
+    <div class="flex items-center gap-3 text-xs">
+      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+        <span class="text-slate-400">TOTAL WIN RATE:</span>
+        <span id="globalWinRate" class="text-emerald-400 font-bold ml-1">--%</span>
       </div>
-
-      <!-- Global Trust Gate (>51% Win Rate Check) -->
-      <div class="bg-obsidian border border-borderSubtle rounded-md p-3 flex flex-col gap-1.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="text-[11px] text-slate-400 uppercase tracking-wide">ENGINE TRUST STATUS (&gt;51% WIN RATE):</span>
-          <span id="global-trust-badge" class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/50">
-            TRUSTED // 80.0% WIN RATE (8/10)
-          </span>
-        </div>
-        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-800/80">
-          <span class="text-slate-400">COMBINED MEAN FORECAST ACCURACY:</span>
-          <span id="global-accuracy" class="text-cyan-300 font-semibold">97.67%</span>
-        </div>
+      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+        <span class="text-slate-400">MEAN FORECAST ACC:</span>
+        <span id="globalAcc" class="text-cyan-400 font-bold ml-1">--%</span>
       </div>
+    </div>
+  </header>
 
-      <!-- Separate HK$10,000 Capital Simulators (Stacked Vertically for Zero Clutter) -->
-      <div class="flex flex-col gap-2">
-        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-          SEPARATE CAPITAL SIMULATORS (STARTING CAPITAL: HK$10,000 EACH)
-        </div>
+  <!-- PARALLEL COLUMNS: LEFT = BTC-USD | RIGHT = SOXL -->
+  <main id="parallelGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></main>
 
-        <!-- BTC-USD 10K HKD Simulator Row -->
-        <div class="bg-obsidian border border-borderSubtle rounded-md p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-white">BTC-USD SIMULATOR</span>
-            <span id="btc-trust-pill" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60">
-              WIN: 80% (4/5) • TRUSTED
-            </span>
-          </div>
-          <div class="flex items-center gap-3 text-xs">
-            <span class="text-slate-400">Start: <strong class="text-slate-300 font-normal">HK$10,000</strong></span>
-            <span class="text-slate-600">→</span>
-            <span id="btc-sim-equity" class="font-bold text-emerald-400">HK$10,485 (+4.85% / +HK$485)</span>
-          </div>
-        </div>
-
-        <!-- SOXL 10K HKD Simulator Row -->
-        <div class="bg-obsidian border border-borderSubtle rounded-md p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-white">SOXL SIMULATOR</span>
-            <span id="soxl-trust-pill" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60">
-              WIN: 80% (4/5) • TRUSTED
-            </span>
-          </div>
-          <div class="flex items-center gap-3 text-xs">
-            <span class="text-slate-400">Start: <strong class="text-slate-300 font-normal">HK$10,000</strong></span>
-            <span class="text-slate-600">→</span>
-            <span id="soxl-sim-equity" class="font-bold text-emerald-400">HK$10,820 (+8.20% / +HK$820)</span>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- ================================================================= -->
-    <!-- 2. DAILY GOOGLE FINANCE COPY-PASTE INGESTION BOX                  -->
-    <!-- ================================================================= -->
-    <section class="bg-panel border border-borderSubtle rounded-lg overflow-hidden">
-      <button
-        id="toggle-parser-btn"
-        type="button"
-        class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-panelAlt transition-colors"
-      >
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">+ DAILY GOOGLE FINANCE COPY-PASTE INGESTION</span>
-        </div>
-        <span id="parser-chevron" class="text-[11px] text-slate-400">[OPEN INPUT]</span>
-      </button>
-
-      <div id="parser-body" class="hidden border-t border-borderSubtle p-4 flex flex-col gap-3 bg-obsidian/60">
-        <p class="text-[11px] text-slate-400 leading-relaxed">
-          Copy and paste raw daily text directly from Google Finance for <strong class="text-slate-200">BTC-USD</strong> or <strong class="text-slate-200">SOXL</strong>. The engine will automatically score yesterday's forecast vs. today's actual price, update the HK$10,000 simulator, log the pattern, and compute today's new 24H signal.
-        </p>
-
-        <div class="flex flex-col gap-2">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <label for="raw-paste-input" class="text-[11px] font-semibold text-slate-300 uppercase">
-              PASTE GOOGLE FINANCE TEXT (OR SPOT PRICE):
-            </label>
-            <div class="flex items-center gap-1.5">
-              <button type="button" id="sample-btc-btn" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
-                Sample BTC Paste
-              </button>
-              <button type="button" id="sample-soxl-btn" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
-                Sample SOXL Paste
-              </button>
-              <button type="button" id="reset-state-btn" class="text-[10px] px-2 py-0.5 rounded bg-rose-950/60 hover:bg-rose-900/70 text-rose-300 border border-rose-800/50">
-                Reset to 10-29 Default
-              </button>
-            </div>
-          </div>
-
-          <textarea
-            id="raw-paste-input"
-            rows="3"
-            placeholder="Example paste from Google:&#10;Bitcoin (BTC / USD) 81,740.00 +654.12 (0.81%)&#10;or SOXL $102.40 -$4.95 (-4.61%)"
-            class="w-full bg-obsidian border border-borderSubtle focus:border-cyan-500 rounded p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none"
-          ></textarea>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <div class="flex items-center gap-2">
-            <span class="text-[11px] text-slate-400">Target Asset:</span>
-            <select id="asset-selector" class="bg-obsidian border border-borderSubtle rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-500">
-              <option value="AUTO">Auto-Detect from Paste</option>
-              <option value="BTC">BTC-USD</option>
-              <option value="SOXL">SOXL</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            id="run-inference-btn"
-            class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs tracking-wide transition-colors"
-          >
-            EVALUATE YESTERDAY &amp; GENERATE TODAY'S SIGNAL
-          </button>
-        </div>
-
-        <div id="parser-feedback" class="hidden text-[11px] px-3 py-2 rounded border"></div>
-      </div>
-    </section>
-
-    <!-- ================================================================= -->
-    <!-- 3. ASSET 1: BTC-USD VERTICAL INFERENCE STACK                      -->
-    <!-- ================================================================= -->
-    <section class="bg-panel border border-borderSubtle rounded-lg p-4 flex flex-col gap-4 shadow-lg">
-      <!-- Asset Header -->
-      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-borderSubtle pb-2.5">
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-bold text-white tracking-wide">1 // BTC-USD</span>
-          <span id="btc-timestamp" class="text-[11px] text-slate-400">2026-10-29 00:39 UTC</span>
-        </div>
-        <span id="btc-header-verdict" class="text-xs font-semibold text-emerald-400">
-          YESTERDAY'S FORECAST: HIT (99.27%)
-        </span>
-      </div>
-
-      <!-- STEP A: TODAY'S ACTIONABLE SIGNAL -->
-      <div id="btc-signal-card" class="rounded-md p-3.5 border bg-emerald-950/25 border-emerald-600/40 flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-            TODAY'S ACTIONABLE SIGNAL
-          </span>
-          <span id="btc-prob-badge" class="text-[11px] font-semibold text-emerald-300">
-            EDGE / PROB RATIO: 1.80x
-          </span>
-        </div>
-        <div id="btc-directive" class="text-base sm:text-lg font-bold text-emerald-300 tracking-tight">
-          HOLD CORE / ADD &gt; $81,800
-        </div>
-        <div id="btc-levels" class="text-xs text-emerald-200/80">
-          Add: &gt;$81,800 &nbsp;|&nbsp; Bid: $80,300 &nbsp;|&nbsp; Stop: &lt;$79,800
-        </div>
-
-        <!-- Core Price Action Metrics (No Fluff) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2.5 mt-1 border-t border-emerald-800/40 text-xs">
-          <div>
-            <div class="text-[10px] text-slate-400 uppercase">TODAY'S SPOT PRICE</div>
-            <div id="btc-spot" class="font-bold text-white text-sm">$81,085.88</div>
-            <div id="btc-change" class="text-[11px] text-emerald-400">+0.52% (24H High $81,209)</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-slate-400 uppercase">TODAY'S 24H FORECAST E[Y]</div>
-            <div id="btc-forecast" class="font-bold text-cyan-300 text-sm">$81,650.00</div>
-            <div id="btc-forecast-delta" class="text-[11px] text-cyan-400/80">+0.70% Expected Drift</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-slate-400 uppercase">POSITION ALLOCATION</div>
-            <div id="btc-allocation" class="font-bold text-white text-sm">100% ACTIVE</div>
-            <div class="text-[11px] text-slate-400">10K HKD Sim Deployed</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP B: YESTERDAY'S FORECAST VS. TODAY'S ACTUAL -->
-      <div class="bg-obsidian border border-borderSubtle rounded-md p-3.5 flex flex-col gap-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            YESTERDAY'S FORECAST VS. TODAY'S ACTUAL RESULT
-          </span>
-          <span id="btc-audit-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50">
-            FORECAST HIT • 99.27% ACCURACY
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
-          <div class="bg-panel p-2.5 rounded border border-slate-800/80">
-            <div class="text-[10px] text-slate-400">YESTERDAY'S TARGET E[Y]</div>
-            <div id="btc-prev-target" class="font-bold text-slate-200 mt-0.5">$80,495.00</div>
-            <div id="btc-prev-signal" class="text-[10px] text-emerald-400 mt-0.5">Signal: LONG / HOLD</div>
-          </div>
-          <div class="bg-panel p-2.5 rounded border border-slate-800/80">
-            <div class="text-[10px] text-slate-400">TODAY'S ACTUAL PRICE</div>
-            <div id="btc-actual-price" class="font-bold text-white mt-0.5">$81,085.88</div>
-            <div id="btc-error-delta" class="text-[10px] text-emerald-400 mt-0.5">Error: +$590.88 (0.73%)</div>
-          </div>
-          <div class="bg-panel p-2.5 rounded border border-slate-800/80">
-            <div class="text-[10px] text-slate-400">10K HKD SIMULATOR P&amp;L</div>
-            <div id="btc-last-pnl" class="font-bold text-emerald-400 mt-0.5">+HK$142 (+1.40%)</div>
-            <div id="btc-running-eq" class="text-[10px] text-slate-300 mt-0.5">Equity: HK$10,485</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP C: DETECTED PRICE ACTION PATTERN & HISTORICAL AUDIT LOG -->
-      <div class="bg-obsidian border border-borderSubtle rounded-md p-3.5 flex flex-col gap-3">
-        <div>
-          <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-            DETECTED PRICE ACTION PATTERN (NO CHARTS // PURE NUMERIC STRUCTURE)
-          </div>
-          <p id="btc-pattern-note" class="text-xs text-slate-200 leading-relaxed bg-panel p-2.5 rounded border border-slate-800">
-            Higher-low absorption above $80,200; positive drift continuation confirmed when 24h range holds &lt;1.5% compression with spot closing above prior E[Y] ($80,495).
-          </p>
-        </div>
-
-        <!-- Historical Forecast vs. Actual Table -->
-        <div class="overflow-x-auto">
-          <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-            BTC-USD HISTORICAL FORECAST ACCURACY &amp; 10K HKD SIMULATOR LOG
-          </div>
-          <table class="w-full text-left border-collapse text-[11px]">
-            <thead>
-              <tr class="border-b border-slate-800 text-slate-400">
-                <th class="py-1.5 pr-2 font-medium">DATE</th>
-                <th class="py-1.5 px-2 font-medium">PRIOR SIGNAL</th>
-                <th class="py-1.5 px-2 font-medium">FORECAST E[Y]</th>
-                <th class="py-1.5 px-2 font-medium">ACTUAL</th>
-                <th class="py-1.5 px-2 font-medium">ACCURACY</th>
-                <th class="py-1.5 px-2 font-medium">VERDICT</th>
-                <th class="py-1.5 pl-2 font-medium text-right">10K HKD SIM</th>
-              </tr>
-            </thead>
-            <tbody id="btc-history-tbody" class="divide-y divide-slate-800/60">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================================================================= -->
-    <!-- 4. ASSET 2: SOXL VERTICAL INFERENCE STACK (BELOW BTC-USD)         -->
-    <!-- ================================================================= -->
-    <section class="bg-panel border border-borderSubtle rounded-lg p-4 flex flex-col gap-4 shadow-lg">
-      <!-- Asset Header -->
-      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-borderSubtle pb-2.5">
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-bold text-white tracking-wide">2 // SOXL</span>
-          <span id="soxl-timestamp" class="text-[11px] text-slate-400">2026-10-29 00:39 UTC</span>
-        </div>
-        <span id="soxl-header-verdict" class="text-xs font-semibold text-rose-400">
-          YESTERDAY'S FORECAST: MISS (90.03%)
-        </span>
-      </div>
-
-      <!-- STEP A: TODAY'S ACTIONABLE SIGNAL -->
-      <div id="soxl-signal-card" class="rounded-md p-3.5 border bg-amber-950/25 border-amber-600/40 flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-amber-400">
-            TODAY'S ACTIONABLE SIGNAL
-          </span>
-          <span id="soxl-prob-badge" class="text-[11px] font-semibold text-amber-300">
-            EDGE / PROB RATIO: 0.78x
-          </span>
-        </div>
-        <div id="soxl-directive" class="text-base sm:text-lg font-bold text-amber-300 tracking-tight">
-          STAND ASIDE / WAIT FOR DIP
-        </div>
-        <div id="soxl-levels" class="text-xs text-amber-200/80">
-          Reload Zone: $98.50–$101.00 &nbsp;|&nbsp; Hard Stop: &lt;$96.00
-        </div>
-
-        <!-- Core Price Action Metrics (No Fluff) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2.5 mt-1 border-t border-amber-800/40 text-xs">
-          <div>
-            <div class="text-[10px] text-slate-400 uppercase">TODAY'S SPOT PRICE</div>
-            <div id="soxl-spot" class="font-bold text-white text-sm">$107.35</div>
-            <div id="soxl-change" class="text-[11px] text-emerald-400">+6.20% (Extended)</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-slate-400 uppercase">TODAY'S 24H FORECAST E[Y]</div>
-            <div id="soxl-forecast" class="font-bold text-cyan-300 text-sm">$104.20</div>
-            <div id="soxl-forecast-delta" class="text-[11px] text-amber-400/90">-2.93% Mean Reversion</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-slate-400 uppercase">POSITION ALLOCATION</div>
-            <div id="soxl-allocation" class="font-bold text-amber-300 text-sm">0% FLAT (CASH)</div>
-            <div class="text-[11px] text-slate-400">Awaiting Pullback</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP B: YESTERDAY'S FORECAST VS. TODAY'S ACTUAL -->
-      <div class="bg-obsidian border border-borderSubtle rounded-md p-3.5 flex flex-col gap-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            YESTERDAY'S FORECAST VS. TODAY'S ACTUAL RESULT
-          </span>
-          <span id="soxl-audit-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-700/50">
-            FORECAST MISS • 90.03% ACCURACY
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
-          <div class="bg-panel p-2.5 rounded border border-slate-800/80">
-            <div class="text-[10px] text-slate-400">YESTERDAY'S TARGET E[Y]</div>
-            <div id="soxl-prev-target" class="font-bold text-slate-200 mt-0.5">$96.65</div>
-            <div id="soxl-prev-signal" class="text-[10px] text-amber-400 mt-0.5">Signal: STAND ASIDE</div>
-          </div>
-          <div class="bg-panel p-2.5 rounded border border-slate-800/80">
-            <div class="text-[10px] text-slate-400">TODAY'S ACTUAL PRICE</div>
-            <div id="soxl-actual-price" class="font-bold text-white mt-0.5">$107.35</div>
-            <div id="soxl-error-delta" class="text-[10px] text-rose-400 mt-0.5">Error: +$10.70 (9.97%)</div>
-          </div>
-          <div class="bg-panel p-2.5 rounded border border-slate-800/80">
-            <div class="text-[10px] text-slate-400">10K HKD SIMULATOR P&amp;L</div>
-            <div id="soxl-last-pnl" class="font-bold text-slate-300 mt-0.5">HK$0 (0.00% Flat)</div>
-            <div id="soxl-running-eq" class="text-[10px] text-slate-300 mt-0.5">Equity: HK$10,820</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP C: DETECTED PRICE ACTION PATTERN & HISTORICAL AUDIT LOG -->
-      <div class="bg-obsidian border border-borderSubtle rounded-md p-3.5 flex flex-col gap-3">
-        <div>
-          <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-            DETECTED PRICE ACTION PATTERN (NO CHARTS // PURE NUMERIC STRUCTURE)
-          </div>
-          <p id="soxl-pattern-note" class="text-xs text-slate-200 leading-relaxed bg-panel p-2.5 rounded border border-slate-800">
-            Single-day +6.20% 3x-leveraged expansion exceeds 1.5x ATR above prior target ($96.65); historical mean-reversion probability within 48h is 72%. Do not chase vertical breakouts.
-          </p>
-        </div>
-
-        <!-- Historical Forecast vs. Actual Table -->
-        <div class="overflow-x-auto">
-          <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-            SOXL HISTORICAL FORECAST ACCURACY &amp; 10K HKD SIMULATOR LOG
-          </div>
-          <table class="w-full text-left border-collapse text-[11px]">
-            <thead>
-              <tr class="border-b border-slate-800 text-slate-400">
-                <th class="py-1.5 pr-2 font-medium">DATE</th>
-                <th class="py-1.5 px-2 font-medium">PRIOR SIGNAL</th>
-                <th class="py-1.5 px-2 font-medium">FORECAST E[Y]</th>
-                <th class="py-1.5 px-2 font-medium">ACTUAL</th>
-                <th class="py-1.5 px-2 font-medium">ACCURACY</th>
-                <th class="py-1.5 px-2 font-medium">VERDICT</th>
-                <th class="py-1.5 pl-2 font-medium text-right">10K HKD SIM</th>
-              </tr>
-            </thead>
-            <tbody id="soxl-history-tbody" class="divide-y divide-slate-800/60">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!--Minimal Footer -->
-    <footer class="text-center text-[11px] text-slate-600 py-2">
-      MODELSIGNAL // PRIVATE FORWARD INFERENCE ENGINE • NO CHARTS • PRICE ACTION &amp; PROBABILITY AUDIT ONLY
-    </footer>
-
-  </main>
-
-  <!-- ================================================================= -->
-  <!-- APPLICATION LOGIC & FORWARD INFERENCE ENGINE                      -->
-  <!-- ================================================================= -->
   <script>
-    const STORAGE_KEY = 'modelsignal_vertical_state_v1';
-
-    // Default baseline state matching 2026-10-29 snapshot
-    const DEFAULT_STATE = {
-      lastUpdated: '2026-10-29 00:39 UTC',
-      btc: {
-        spot: 81085.88,
-        changePct: 0.52,
-        changeNote: '+0.52% (24H High $81,209)',
-        forecastEY: 81650.00,
-        probRatio: 1.80,
-        directive: 'HOLD CORE / ADD > $81,800',
-        levels: 'Add: >$81,800 | Bid: $80,300 | Stop: <$79,800',
-        stance: 'LONG',
-        allocationText: '100% ACTIVE',
-        prevTargetEY: 80495.00,
-        prevSignal: 'LONG / HOLD',
-        lastAccuracy: 99.27,
-        lastVerdict: 'HIT',
-        lastPnlHkd: 142,
-        lastPnlPct: 1.40,
-        equityHkd: 10485,
-        patternNote: 'Higher-low absorption above $80,200; positive drift continuation confirmed when 24h range holds <1.5% compression with spot closing above prior E[Y] ($80,495).',
+    // =========================================================================
+    // CLEAN DATA STARTING OCT 28–29 ONLY (OCT 26 & 27 REMOVED)
+    // =========================================================================
+    const ASSETS = {
+      "BTC-USD": {
+        name: "BTC-USD",
+        SimStart: 10000,
+        simCurrent: 9916,
+        simPct: "-0.84%",
+        allocNow: "50% LONG",
+        priceNow: 79993.11,
+        changeToday: "-1.58%",
+        tomorrowAction: "HOLD 50% / CUT < $79,400",
+        tomorrowNote: "Re-add > $80,500 | Hard Stop: < $79,400",
+        tomorrowTarget: 79650.00,
+        badgeType: "WARN",
         history: [
-          { date: '10-29 00:39', priorSignal: 'LONG / HOLD', forecast: 80495.00, actual: 81085.88, accuracy: 99.27, verdict: 'HIT', simEquity: 10485, pnlText: '+HK$142' },
-          { date: '10-28 00:13', priorSignal: 'LONG / HOLD', forecast: 80250.00, actual: 80665.00, accuracy: 99.49, verdict: 'HIT', simEquity: 10343, pnlText: '+HK$108' },
-          { date: '10-27 14:28', priorSignal: 'LONG / ADD',  forecast: 79580.00, actual: 79990.00, accuracy: 99.49, verdict: 'HIT', simEquity: 10235, pnlText: '+HK$155' },
-          { date: '10-27 10:17', priorSignal: 'STAND ASIDE', forecast: 79800.00, actual: 79410.00, accuracy: 99.51, verdict: 'MISS', simEquity: 10080, pnlText: 'HK$0' },
-          { date: '10-26 23:51', priorSignal: 'LONG / HOLD', forecast: 79400.00, actual: 79800.00, accuracy: 99.50, verdict: 'HIT', simEquity: 10080, pnlText: '+HK$80' }
+          {
+            date: "10-29 13:37",
+            priorSignal: "HOLD / ADD > $81.8K",
+            forecastEY: 81650.00,
+            actualPrice: 79993.11,
+            accuracy: 97.93,
+            verdict: "LOSS",
+            simAfter: "HK$9,916 (-0.84%)"
+          },
+          {
+            date: "10-29 00:39",
+            priorSignal: "HOLD CORE (10-28)",
+            forecastEY: 80495.00,
+            actualPrice: 81085.88,
+            accuracy: 99.27,
+            verdict: "WIN",
+            simAfter: "HK$10,052 (+0.52%)"
+          }
         ]
       },
-      soxl: {
-        spot: 107.35,
-        changePct: 6.20,
-        changeNote: '+6.20% (Extended)',
-        forecastEY: 104.20,
-        probRatio: 0.78,
-        directive: 'STAND ASIDE / WAIT FOR DIP',
-        levels: 'Reload Zone: $98.50–$101.00 | Hard Stop: <$96.00',
-        stance: 'FLAT',
-        allocationText: '0% FLAT (CASH)',
-        prevTargetEY: 96.65,
-        prevSignal: 'STAND ASIDE',
-        lastAccuracy: 90.03,
-        lastVerdict: 'MISS',
-        lastPnlHkd: 0,
-        lastPnlPct: 0.00,
-        equityHkd: 10820,
-        patternNote: 'Single-day +6.20% 3x-leveraged expansion exceeds 1.5x ATR above prior target ($96.65); historical mean-reversion probability within 48h is 72%. Do not chase vertical breakouts.',
+      "SOXL": {
+        name: "SOXL",
+        SimStart: 10000,
+        simCurrent: 10000,
+        simPct: "0.00%",
+        allocNow: "0% -> 50% BUY",
+        priceNow: 100.25,
+        changeToday: "-6.61%",
+        tomorrowAction: "BUY / RELOAD @ $100.25",
+        tomorrowNote: "Hit $98.50–$101.00 Reload Zone | Stop: < $96.00",
+        tomorrowTarget: 103.80,
+        badgeType: "BUY",
         history: [
-          { date: '10-29 00:39', priorSignal: 'STAND ASIDE', forecast: 96.65, actual: 107.35, accuracy: 90.03, verdict: 'MISS', simEquity: 10820, pnlText: 'HK$0' },
-          { date: '10-28 00:13', priorSignal: 'LONG / HOLD', forecast: 100.80, actual: 101.08, accuracy: 99.72, verdict: 'HIT', simEquity: 10820, pnlText: '+HK$310' },
-          { date: '10-27 14:28', priorSignal: 'LONG / HOLD', forecast: 98.10, actual: 98.25, accuracy: 99.85, verdict: 'HIT', simEquity: 10510, pnlText: '+HK$220' },
-          { date: '10-27 10:17', priorSignal: 'STAND ASIDE', forecast: 95.90, actual: 96.10, accuracy: 99.79, verdict: 'HIT', simEquity: 10290, pnlText: 'HK$0' },
-          { date: '10-26 23:51', priorSignal: 'LONG / ADD',  forecast: 96.50, actual: 96.85, accuracy: 99.64, verdict: 'HIT', simEquity: 10290, pnlText: '+HK$290' }
+          {
+            date: "10-29 13:40",
+            priorSignal: "STAND ASIDE (0% CASH)",
+            forecastEY: 104.20,
+            actualPrice: 100.25,
+            accuracy: 96.06,
+            verdict: "WIN",
+            simAfter: "HK$10,000 (0.00%)"
+          },
+          {
+            date: "10-29 00:39",
+            priorSignal: "STAND ASIDE (10-28)",
+            forecastEY: 96.65,
+            actualPrice: 107.35,
+            accuracy: 90.03,
+            verdict: "LOSS",
+            simAfter: "HK$10,000 (0.00%)"
+          }
         ]
       }
     };
 
-    let appState = loadState();
+    const fmt = (val, asset) =>
+      asset === "BTC-USD"
+        ? "$" + Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : "$" + Number(val).toFixed(2);
 
-    function loadState() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          return JSON.parse(saved);
-        }
-      } catch (e) {
-        console.warn('Storage unavailable, using default snapshot.');
-      }
-      return JSON.parse(JSON.stringify(DEFAULT_STATE));
-    }
+    const signalStyle = (type) => {
+      if (type === "BUY") return "bg-emerald-500/15 border-emerald-500/50 text-emerald-300";
+      if (type === "WARN") return "bg-amber-500/15 border-amber-500/50 text-amber-300";
+      return "bg-cyan-500/15 border-cyan-500/50 text-cyan-300";
+    };
 
-    function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-      } catch (e) {
-        console.warn('Could not persist state.');
-      }
-    }
+    function render() {
+      const allRows = [...ASSETS["BTC-USD"].history, ...ASSETS["SOXL"].history];
+      const totalWins = allRows.filter(r => r.verdict === "WIN").length;
+      const meanAcc = allRows.reduce((s, r) => s + r.accuracy, 0) / allRows.length;
 
-    function formatCurrency(val, decimals = 2) {
-      return '$' + Number(val).toLocaleString('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      });
-    }
+      document.getElementById("globalWinRate").textContent =
+        `${Math.round((totalWins / allRows.length) * 100)}% (${totalWins}/${allRows.length})`;
+      document.getElementById("globalAcc").textContent = `${meanAcc.toFixed(2)}%`;
 
-    function formatHkd(val) {
-      return 'HK$' + Math.round(val).toLocaleString('en-US');
-    }
+      const cols = ["BTC-USD", "SOXL"].map(key => {
+        const item = ASSETS[key];
+        const wins = item.history.filter(r => r.verdict === "WIN").length;
+        const winRate = Math.round((wins / item.history.length) * 100);
+        const avgAcc = (item.history.reduce((s, r) => s + r.accuracy, 0) / item.history.length).toFixed(2);
+        const latestAudit = item.history[0];
 
-    // Render all UI elements from appState
-    function renderAll() {
-      document.getElementById('global-timestamp').textContent = appState.lastUpdated;
-      document.getElementById('btc-timestamp').textContent = appState.lastUpdated;
-      document.getElementById('soxl-timestamp').textContent = appState.lastUpdated;
+        return `
+          <section class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-5">
 
-      // Compute Global Win Rate & Mean Accuracy across both histories
-      const allHistory = [...appState.btc.history, ...appState.soxl.history];
-      const totalCalls = allHistory.length;
-      const totalHits = allHistory.filter(h => h.verdict === 'HIT').length;
-      const globalWinRate = totalCalls > 0 ? (totalHits / totalCalls) * 100 : 0;
-      const meanAccuracy = totalCalls > 0
-        ? allHistory.reduce((acc, item) => acc + item.accuracy, 0) / totalCalls
-        : 0;
+            <!-- HEADER: ASSET + WIN RATE + 10K SIMULATOR -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h2 class="text-lg font-bold text-white tracking-wide">${item.name}</h2>
+                <span class="text-xs text-slate-400">
+                  WIN RATE: <strong class="text-emerald-400">${winRate}% (${wins}/${item.history.length})</strong>
+                  · MEAN ACC: <strong class="text-cyan-400">${avgAcc}%</strong>
+                </span>
+              </div>
+              <div class="text-right bg-slate-950 border border-slate-800 px-3 py-1.5 rounded">
+                <span class="text-[10px] text-slate-500 block uppercase">HK$10K SIMULATOR (${item.allocNow})</span>
+                <span class="text-xs font-bold ${item.simCurrent >= 10000 ? 'text-emerald-400' : 'text-amber-400'}">
+                  HK$${item.simCurrent.toLocaleString()} (${item.simPct})
+                </span>
+              </div>
+            </div>
 
-      const globalTrustBadge = document.getElementById('global-trust-badge');
-      const isGlobalTrusted = globalWinRate > 51;
-      globalTrustBadge.textContent = `${isGlobalTrusted ? 'TRUSTED' : 'BELOW 51% THRESHOLD'} // ${globalWinRate.toFixed(1)}% WIN RATE (${totalHits}/${totalCalls})`;
-      globalTrustBadge.className = isGlobalTrusted
-        ? 'text-xs font-bold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/50'
-        : 'text-xs font-bold px-2 py-0.5 rounded bg-rose-950/80 text-rose-300 border border-rose-700/50';
+            <!-- 1. BIG SIGNAL / TOMORROW'S ACTION -->
+            <div class="p-4 rounded-lg border ${signalStyle(item.badgeType)}">
+              <div class="flex items-center justify-between text-[11px] uppercase tracking-wider opacity-80">
+                <span>1 // Tomorrow's Action (Big Signal)</span>
+                <span>Next 24H Target: <strong>${fmt(item.tomorrowTarget, item.name)}</strong></span>
+              </div>
+              <div class="text-2xl font-extrabold tracking-tight mt-1.5">${item.tomorrowAction}</div>
+              <div class="text-xs mt-1 opacity-90">${item.tomorrowNote}</div>
+            </div>
 
-      document.getElementById('global-accuracy').textContent = `${meanAccuracy.toFixed(2)}%`;
+            <!-- 2. PRICE NOW & 3. YESTERDAY'S ACCURACY -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-950 border border-slate-800/90 rounded-lg p-3.5">
+                <span class="text-[10px] uppercase tracking-wider text-slate-500 block">2 // Price Now</span>
+                <div class="text-xl font-bold text-white mt-1">${fmt(item.priceNow, item.name)}</div>
+                <span class="text-xs font-semibold ${item.changeToday.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${item.changeToday} Today
+                </span>
+              </div>
 
-      // Render BTC-USD Simulator Top Bar
-      const btcHits = appState.btc.history.filter(h => h.verdict === 'HIT').length;
-      const btcTotal = appState.btc.history.length;
-      const btcWinPct = Math.round((btcHits / btcTotal) * 100);
-      const btcNetHkd = appState.btc.equityHkd - 10000;
-      const btcNetPct = ((btcNetHkd / 10000) * 100).toFixed(2);
-      const btcSign = btcNetHkd >= 0 ? '+' : '';
+              <div class="bg-slate-950 border border-slate-800/90 rounded-lg p-3.5">
+                <span class="text-[10px] uppercase tracking-wider text-slate-500 block">3 // Yesterday's Accuracy</span>
+                <div class="text-xl font-bold mt-1 ${latestAudit.verdict === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${latestAudit.accuracy}% (${latestAudit.verdict})
+                </div>
+                <span class="text-xs text-slate-400 block">
+                  Target: ${fmt(latestAudit.forecastEY, item.name)}
+                </span>
+              </div>
+            </div>
 
-      document.getElementById('btc-trust-pill').textContent =
-        `WIN: ${btcWinPct}% (${btcHits}/${btcTotal}) • ${btcWinPct > 51 ? 'TRUSTED' : 'CAUTION'}`;
-      document.getElementById('btc-sim-equity').textContent =
-        `${formatHkd(appState.btc.equityHkd)} (${btcSign}${btcNetPct}% / ${btcSign}${formatHkd(btcNetHkd)})`;
-      document.getElementById('btc-sim-equity').className =
-        btcNetHkd >= 0 ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
+            <!-- OCT 28–29 LOG ONLY -->
+            <div class="border-t border-slate-800 pt-3">
+              <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Oct 28–29 Audit Log (Clean Start)</div>
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="text-[10px] text-slate-500 uppercase border-b border-slate-800">
+                    <th class="py-1.5">Date</th>
+                    <th class="py-1.5">Prior Action</th>
+                    <th class="py-1.5">Target vs Actual</th>
+                    <th class="py-1.5 text-right">Forecast Acc</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${item.history.map(r => `
+                    <tr>
+                      <td class="py-2 text-slate-400 whitespace-nowrap">${r.date}</td>
+                      <td class="py-2 text-slate-200 font-medium">${r.priorSignal}</td>
+                      <td class="py-2 text-slate-300 whitespace-nowrap">
+                        ${fmt(r.forecastEY, item.name)} → <strong class="text-white">${fmt(r.actualPrice, item.name)}</strong>
+                      </td>
+                      <td class="py-2 text-right font-bold whitespace-nowrap ${r.verdict === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
+                        ${r.accuracy}% (${r.verdict})
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
 
-      // Render SOXL Simulator Top Bar
-      const soxlHits = appState.soxl.history.filter(h => h.verdict === 'HIT').length;
-      const soxlTotal = appState.soxl.history.length;
-      const soxlWinPct = Math.round((soxlHits / soxlTotal) * 100);
-      const soxlNetHkd = appState.soxl.equityHkd - 10000;
-      const soxlNetPct = ((soxlNetHkd / 10000) * 100).toFixed(2);
-      const soxlSign = soxlNetHkd >= 0 ? '+' : '';
-
-      document.getElementById('soxl-trust-pill').textContent =
-        `WIN: ${soxlWinPct}% (${soxlHits}/${soxlTotal}) • ${soxlWinPct > 51 ? 'TRUSTED' : 'CAUTION'}`;
-      document.getElementById('soxl-sim-equity').textContent =
-        `${formatHkd(appState.soxl.equityHkd)} (${soxlSign}${soxlNetPct}% / ${soxlSign}${formatHkd(soxlNetHkd)})`;
-      document.getElementById('soxl-sim-equity').className =
-        soxlNetHkd >= 0 ? 'font-bold text-emerald-400' : 'font-bold text-rose-400';
-
-      // Render BTC-USD Block
-      renderAssetBlock('btc', appState.btc);
-
-      // Render SOXL Block
-      renderAssetBlock('soxl', appState.soxl);
-    }
-
-    function renderAssetBlock(prefix, data) {
-      const isLong = data.stance === 'LONG';
-      const signalCard = document.getElementById(`${prefix}-signal-card`);
-      const directiveEl = document.getElementById(`${prefix}-directive`);
-      const levelsEl = document.getElementById(`${prefix}-levels`);
-      const probBadge = document.getElementById(`${prefix}-prob-badge`);
-
-      if (isLong) {
-        signalCard.className = 'rounded-md p-3.5 border bg-emerald-950/25 border-emerald-600/40 flex flex-col gap-2';
-        directiveEl.className = 'text-base sm:text-lg font-bold text-emerald-300 tracking-tight';
-        levelsEl.className = 'text-xs text-emerald-200/80';
-        probBadge.className = 'text-[11px] font-semibold text-emerald-300';
-      } else {
-        signalCard.className = 'rounded-md p-3.5 border bg-amber-950/25 border-amber-600/40 flex flex-col gap-2';
-        directiveEl.className = 'text-base sm:text-lg font-bold text-amber-300 tracking-tight';
-        levelsEl.className = 'text-xs text-amber-200/80';
-        probBadge.className = 'text-[11px] font-semibold text-amber-300';
-      }
-
-      directiveEl.textContent = data.directive;
-      levelsEl.textContent = data.levels;
-      probBadge.textContent = `EDGE / PROB RATIO: ${data.probRatio.toFixed(2)}x`;
-
-      document.getElementById(`${prefix}-spot`).textContent = formatCurrency(data.spot);
-      const changeEl = document.getElementById(`${prefix}-change`);
-      changeEl.textContent = data.changeNote;
-      changeEl.className = data.changePct >= 0 ? 'text-[11px] text-emerald-400' : 'text-[11px] text-rose-400';
-
-      document.getElementById(`${prefix}-forecast`).textContent = formatCurrency(data.forecastEY);
-      const expDriftPct = (((data.forecastEY - data.spot) / data.spot) * 100).toFixed(2);
-      const driftSign = expDriftPct >= 0 ? '+' : '';
-      document.getElementById(`${prefix}-forecast-delta`).textContent =
-        `${driftSign}${expDriftPct}% Expected 24H Move`;
-
-      const allocEl = document.getElementById(`${prefix}-allocation`);
-      allocEl.textContent = data.allocationText;
-      allocEl.className = isLong ? 'font-bold text-emerald-300 text-sm' : 'font-bold text-amber-300 text-sm';
-
-      // Yesterday's Forecast vs. Today's Actual
-      const isHit = data.lastVerdict === 'HIT';
-      const headerVerdict = document.getElementById(`${prefix}-header-verdict`);
-      headerVerdict.textContent = `YESTERDAY'S FORECAST: ${data.lastVerdict} (${data.lastAccuracy.toFixed(2)}%)`;
-      headerVerdict.className = isHit ? 'text-xs font-semibold text-emerald-400' : 'text-xs font-semibold text-rose-400';
-
-      const auditBadge = document.getElementById(`${prefix}-audit-badge`);
-      auditBadge.textContent = `FORECAST ${data.lastVerdict} • ${data.lastAccuracy.toFixed(2)}% ACCURACY`;
-      auditBadge.className = isHit
-        ? 'text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50'
-        : 'text-[11px] font-bold px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-700/50';
-
-      document.getElementById(`${prefix}-prev-target`).textContent = formatCurrency(data.prevTargetEY);
-      document.getElementById(`${prefix}-prev-signal`).textContent = `Signal: ${data.prevSignal}`;
-      document.getElementById(`${prefix}-actual-price`).textContent = formatCurrency(data.spot);
-
-      const errDiff = data.spot - data.prevTargetEY;
-      const errSign = errDiff >= 0 ? '+' : '-';
-      const errPct = (Math.abs(errDiff) / data.spot * 100).toFixed(2);
-      const errEl = document.getElementById(`${prefix}-error-delta`);
-      errEl.textContent = `Delta: ${errSign}${formatCurrency(Math.abs(errDiff))} (${errPct}%)`;
-      errEl.className = isHit ? 'text-[10px] text-emerald-400 mt-0.5' : 'text-[10px] text-rose-400 mt-0.5';
-
-      const pnlSign = data.lastPnlHkd > 0 ? '+' : '';
-      const lastPnlEl = document.getElementById(`${prefix}-last-pnl`);
-      lastPnlEl.textContent = `${pnlSign}${formatHkd(data.lastPnlHkd)} (${pnlSign}${data.lastPnlPct.toFixed(2)}%)`;
-      lastPnlEl.className = data.lastPnlHkd > 0
-        ? 'font-bold text-emerald-400 mt-0.5'
-        : data.lastPnlHkd < 0
-        ? 'font-bold text-rose-400 mt-0.5'
-        : 'font-bold text-slate-300 mt-0.5';
-
-      document.getElementById(`${prefix}-running-eq`).textContent = `Equity: ${formatHkd(data.equityHkd)}`;
-      document.getElementById(`${prefix}-pattern-note`).textContent = data.patternNote;
-
-      // Render Historical Table
-      const tbody = document.getElementById(`${prefix}-history-tbody`);
-      tbody.innerHTML = '';
-      data.history.forEach(row => {
-        const tr = document.createElement('tr');
-        const hitClass = row.verdict === 'HIT'
-          ? 'text-emerald-400 font-semibold'
-          : 'text-rose-400 font-semibold';
-        tr.innerHTML = `
-          <td class="py-1.5 pr-2 text-slate-400 whitespace-nowrap">${row.date}</td>
-          <td class="py-1.5 px-2 text-slate-300 whitespace-nowrap">${row.priorSignal}</td>
-          <td class="py-1.5 px-2 text-slate-300 whitespace-nowrap">${formatCurrency(row.forecast)}</td>
-          <td class="py-1.5 px-2 text-white font-medium whitespace-nowrap">${formatCurrency(row.actual)}</td>
-          <td class="py-1.5 px-2 text-cyan-300 whitespace-nowrap">${row.accuracy.toFixed(2)}%</td>
-          <td class="py-1.5 px-2 whitespace-nowrap ${hitClass}">${row.verdict}</td>
-          <td class="py-1.5 pl-2 text-right text-slate-200 whitespace-nowrap">${formatHkd(row.simEquity)} <span class="text-[10px] text-slate-400">(${row.pnlText})</span></td>
+          </section>
         `;
-        tbody.appendChild(tr);
       });
+
+      document.getElementById("parallelGrid").innerHTML = cols.join("");
     }
 
-    // Parse raw Google Finance paste and update model inference
-    function parseAndRunInference() {
-      const rawText = document.getElementById('raw-paste-input').value.trim();
-      const selectedAsset = document.getElementById('asset-selector').value;
-      const feedbackEl = document.getElementById('parser-feedback');
-
-      if (!rawText) {
-        showFeedback('Please paste Google Finance price data or enter a spot price first.', 'error');
-        return;
-      }
-
-      // Detect asset
-      let target = selectedAsset;
-      if (target === 'AUTO') {
-        if (/soxl|semiconductor|direxion/i.test(rawText)) {
-          target = 'SOXL';
-        } else if (/btc|bitcoin/i.test(rawText)) {
-          target = 'BTC';
-        } else {
-          // Heuristic by price magnitude
-          const firstNum = extractNumbers(rawText)[0];
-          if (firstNum && firstNum > 2000) {
-            target = 'BTC';
-          } else {
-            target = 'SOXL';
-          }
-        }
-      }
-
-      const nums = extractNumbers(rawText);
-      if (nums.length === 0) {
-        showFeedback('Could not detect a valid numeric price in your paste.', 'error');
-        return;
-      }
-
-      const newSpot = nums[0];
-      // Try to extract percentage change if present in parentheses or with %
-      let pctMatch = rawText.match(/([+-]?\d+(?:\.\d+)?)\s*%/);
-      const assetObj = target === 'BTC' ? appState.btc : appState.soxl;
-      const oldSpot = assetObj.spot;
-      const computedPct = ((newSpot - oldSpot) / oldSpot) * 100;
-      const dailyChangePct = pctMatch ? parseFloat(pctMatch[1]) : computedPct;
-
-      // 1. Evaluate Yesterday's Forecast vs. Today's New Actual Price
-      const priorForecast = assetObj.forecastEY;
-      const priorStance = assetObj.stance; // 'LONG' or 'FLAT'
-      const priorDirectiveShort = priorStance === 'LONG' ? 'LONG / HOLD' : 'STAND ASIDE';
-
-      const absError = Math.abs(newSpot - priorForecast);
-      const accuracy = Math.max(0, 100 - (absError / newSpot) * 100);
-
-      // Determine HIT or MISS:
-      // If prior forecast expected higher than oldSpot and newSpot moved up (or accuracy >= 98.8%), count as HIT
-      const expectedUp = priorForecast >= oldSpot;
-      const actualUp = newSpot >= oldSpot;
-      const isHit = (expectedUp === actualUp && accuracy >= 96.0) || accuracy >= 99.0;
-      const verdict = isHit ? 'HIT' : 'MISS';
-
-      // 2. Update HK$10,000 Simulator
-      let pnlHkd = 0;
-      let pnlPct = 0;
-      if (priorStance === 'LONG') {
-        pnlPct = ((newSpot - oldSpot) / oldSpot) * 100;
-        pnlHkd = Math.round(assetObj.equityHkd * (pnlPct / 100));
-        assetObj.equityHkd = Math.max(0, assetObj.equityHkd + pnlHkd);
-      }
-
-      // 3. Generate Today's Forward 24H Signal & Pattern Recognition
-      const nowStr = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-      const dateShort = nowStr.slice(5, 16);
-
-      if (target === 'BTC') {
-        const isOverextended = dailyChangePct > 3.8;
-        if (isOverextended) {
-          assetObj.stance = 'FLAT';
-          assetObj.allocationText = '0% FLAT (TAKE PROFIT)';
-          assetObj.forecastEY = +(newSpot * 0.988).toFixed(2);
-          assetObj.probRatio = 0.86;
-          const reloadLow = Math.round(newSpot * 0.975);
-          const reloadHigh = Math.round(newSpot * 0.985);
-          const stopLvl = Math.round(newSpot * 0.96);
-          assetObj.directive = `STAND ASIDE / RELOAD $${reloadLow.toLocaleString()}`;
-          assetObj.levels = `Reload: $${reloadLow.toLocaleString()}–$${reloadHigh.toLocaleString()} | Stop: <$${stopLvl.toLocaleString()}`;
-          assetObj.patternNote = `24h impulse (+${dailyChangePct.toFixed(2)}%) stretched above upper volatility band; awaiting mean-reversion pullback into $${reloadLow.toLocaleString()} liquidity pocket.`;
-        } else {
-          assetObj.stance = 'LONG';
-          assetObj.allocationText = '100% ACTIVE';
-          assetObj.forecastEY = +(newSpot * 1.0075).toFixed(2);
-          assetObj.probRatio = 1.75;
-          const addLvl = Math.round(newSpot * 1.008 / 50) * 50;
-          const bidLvl = Math.round(newSpot * 0.99 / 50) * 50;
-          const stopLvl = Math.round(newSpot * 0.982 / 50) * 50;
-          assetObj.directive = `HOLD CORE / ADD > $${addLvl.toLocaleString()}`;
-          assetObj.levels = `Add: >$${addLvl.toLocaleString()} | Bid: $${bidLvl.toLocaleString()} | Stop: <$${stopLvl.toLocaleString()}`;
-          assetObj.patternNote = `Constructive spot absorption at ${formatCurrency(newSpot)}; model projects +0.75% positive drift toward ${formatCurrency(assetObj.forecastEY)} while holding above $${stopLvl.toLocaleString()}.`;
-        }
-      } else {
-        // SOXL 3x Leveraged Semiconductor logic
-        const isExtended = dailyChangePct > 4.0;
-        if (isExtended) {
-          assetObj.stance = 'FLAT';
-          assetObj.allocationText = '0% FLAT (CASH)';
-          assetObj.forecastEY = +(newSpot * 0.971).toFixed(2);
-          assetObj.probRatio = 0.79;
-          const reloadLow = (newSpot * 0.92).toFixed(2);
-          const reloadHigh = (newSpot * 0.945).toFixed(2);
-          const stopLvl = (newSpot * 0.895).toFixed(2);
-          assetObj.directive = 'STAND ASIDE / WAIT FOR DIP';
-          assetObj.levels = `Reload Zone: $${reloadLow}–$${reloadHigh} | Hard Stop: <$${stopLvl}`;
-          assetObj.patternNote = `Single-day +${dailyChangePct.toFixed(2)}% 3x-leveraged expansion exceeds 1.5x ATR; historical mean-reversion probability within 48h is 72%. Avoid chasing vertical extensions.`;
-        } else {
-          assetObj.stance = 'LONG';
-          assetObj.allocationText = '100% ACTIVE';
-          assetObj.forecastEY = +(newSpot * 1.024).toFixed(2);
-          assetObj.probRatio = 1.64;
-          const addLvl = (newSpot * 1.015).toFixed(2);
-          const bidLvl = (newSpot * 0.985).toFixed(2);
-          const stopLvl = (newSpot * 0.96).toFixed(2);
-          assetObj.directive = `ACCUMULATE / HOLD > $${bidLvl}`;
-          assetObj.levels = `Add: >$${addLvl} | Support Bid: $${bidLvl} | Hard Stop: <$${stopLvl}`;
-          assetObj.patternNote = `Volatility compression stabilized at $${newSpot.toFixed(2)}; favorable 1.64x upside asymmetry targeting $${assetObj.forecastEY.toFixed(2)} over next 24h session.`;
-        }
-      }
-
-      // Save audit fields
-      assetObj.prevTargetEY = priorForecast;
-      assetObj.prevSignal = priorDirectiveShort;
-      assetObj.spot = newSpot;
-      assetObj.changePct = dailyChangePct;
-      const signStr = dailyChangePct >= 0 ? '+' : '';
-      assetObj.changeNote = `${signStr}${dailyChangePct.toFixed(2)}% (Daily Update)`;
-      assetObj.lastAccuracy = accuracy;
-      assetObj.lastVerdict = verdict;
-      assetObj.lastPnlHkd = pnlHkd;
-      assetObj.lastPnlPct = pnlPct;
-
-      // Prepend to history log (keep latest 8 entries)
-      const pnlBadge = pnlHkd === 0 ? 'HK$0' : (pnlHkd > 0 ? `+HK$${pnlHkd}` : `-HK$${Math.abs(pnlHkd)}`);
-      assetObj.history.unshift({
-        date: dateShort,
-        priorSignal: priorDirectiveShort,
-        forecast: priorForecast,
-        actual: newSpot,
-        accuracy: accuracy,
-        verdict: verdict,
-        simEquity: assetObj.equityHkd,
-        pnlText: pnlBadge
-      });
-      if (assetObj.history.length > 8) {
-        assetObj.history.pop();
-      }
-
-      appState.lastUpdated = nowStr;
-      saveState();
-      renderAll();
-
-      showFeedback(
-        `Updated ${target}: Yesterday's Forecast (${formatCurrency(priorForecast)}) vs Actual (${formatCurrency(newSpot)}) = ${accuracy.toFixed(2)}% [${verdict}]. 10K HKD Sim: ${formatHkd(assetObj.equityHkd)}.`,
-        'success'
-      );
-    }
-
-    function extractNumbers(str) {
-      // Remove commas inside numbers like 81,085.88
-      const cleaned = str.replace(/(\d),(\d)/g, '$1$2');
-      const matches = cleaned.match(/\d+(?:\.\d+)?/g);
-      if (!matches) return [];
-      return matches.map(Number).filter(n => !isNaN(n) && n > 0);
-    }
-
-    function showFeedback(msg, type) {
-      const el = document.getElementById('parser-feedback');
-      el.classList.remove('hidden');
-      if (type === 'success') {
-        el.className = 'text-[11px] px-3 py-2 rounded border bg-emerald-950/60 border-emerald-700/60 text-emerald-300';
-      } else {
-        el.className = 'text-[11px] px-3 py-2 rounded border bg-rose-950/60 border-rose-700/60 text-rose-300';
-      }
-      el.textContent = msg;
-    }
-
-    // Event Listeners
-    document.getElementById('toggle-parser-btn').addEventListener('click', () => {
-      const body = document.getElementById('parser-body');
-      const chevron = document.getElementById('parser-chevron');
-      const isHidden = body.classList.contains('hidden');
-      if (isHidden) {
-        body.classList.remove('hidden');
-        chevron.textContent = '[CLOSE INPUT]';
-      } else {
-        body.classList.add('hidden');
-        chevron.textContent = '[OPEN INPUT]';
-      }
-    });
-
-    document.getElementById('sample-btc-btn').addEventListener('click', () => {
-      document.getElementById('raw-paste-input').value = 'Bitcoin to United States Dollar\n81,720.50 +634.62 (+0.78%) Oct 29, 2026';
-      document.getElementById('asset-selector').value = 'BTC';
-    });
-
-    document.getElementById('sample-soxl-btn').addEventListener('click', () => {
-      document.getElementById('raw-paste-input').value = 'Direxion Daily Semiconductor Bull 3X Shares (SOXL)\n$103.85 -$3.50 (-3.26%)';
-      document.getElementById('asset-selector').value = 'SOXL';
-    });
-
-    document.getElementById('reset-state-btn').addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEY);
-      appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
-      renderAll();
-      showFeedback('Reset to default 2026-10-29 snapshot.', 'success');
-    });
-
-    document.getElementById('run-inference-btn').addEventListener('click', parseAndRunInference);
-
-    // Initialize on load
-    window.addEventListener('DOMContentLoaded', renderAll);
+    render();
   </script>
 </body>
 </html>
