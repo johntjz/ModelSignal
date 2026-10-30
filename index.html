@@ -21,7 +21,7 @@
     <div class="flex items-center gap-2.5">
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
       <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
-      <span class="text-xs text-slate-500">2026-10-29 13:40 UTC</span>
+      <span class="text-xs text-slate-500">2026-10-30 00:15 UTC</span>
     </div>
     <div class="flex items-center gap-3 text-xs">
       <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
@@ -40,22 +40,31 @@
 
   <script>
     // =========================================================================
-    // CLEAN DATA STARTING OCT 28–29 ONLY (OCT 26 & 27 REMOVED)
+    // CLEAN DATA STARTING OCT 28–30 ONLY (OCT 26 & 27 REMOVED)
     // =========================================================================
     const ASSETS = {
       "BTC-USD": {
         name: "BTC-USD",
-        SimStart: 10000,
-        simCurrent: 9916,
-        simPct: "-0.84%",
-        allocNow: "50% LONG",
-        priceNow: 79993.11,
-        changeToday: "-1.58%",
-        tomorrowAction: "HOLD 50% / CUT < $79,400",
-        tomorrowNote: "Re-add > $80,500 | Hard Stop: < $79,400",
-        tomorrowTarget: 79650.00,
+        simStart: 10000,
+        simCurrent: 9879,
+        simPct: "-1.21%",
+        allocNow: "0% CASH (STOPPED @ $79.4K)",
+        priceNow: 77792.42,
+        changeToday: "-2.75% (Low $77,771)",
+        tomorrowAction: "STAND ASIDE (0% CASH)",
+        tomorrowNote: "Broke <$79,400 Stop | Wait for $75.5K–$76.8K base or >$79,400 reclaim",
+        tomorrowTarget: 76800.00,
         badgeType: "WARN",
         history: [
+          {
+            date: "10-30 00:15",
+            priorSignal: "HOLD 50% / CUT < $79.4K",
+            forecastEY: 79650.00,
+            actualPrice: 77792.42,
+            accuracy: 97.61,
+            verdict: "LOSS",
+            simAfter: "HK$9,879 (-1.21%)"
+          },
           {
             date: "10-29 13:37",
             priorSignal: "HOLD / ADD > $81.8K",
@@ -78,17 +87,26 @@
       },
       "SOXL": {
         name: "SOXL",
-        SimStart: 10000,
-        simCurrent: 10000,
-        simPct: "0.00%",
-        allocNow: "0% -> 50% BUY",
-        priceNow: 100.25,
-        changeToday: "-6.61%",
-        tomorrowAction: "BUY / RELOAD @ $100.25",
-        tomorrowNote: "Hit $98.50–$101.00 Reload Zone | Stop: < $96.00",
-        tomorrowTarget: 103.80,
-        badgeType: "BUY",
+        simStart: 10000,
+        simCurrent: 10107,
+        simPct: "+1.07%",
+        allocNow: "50% -> 0% EXIT",
+        priceNow: 102.39,
+        changeToday: "-4.62% (AH: $88.92)",
+        tomorrowAction: "EXIT @ OPEN / STAND ASIDE",
+        tomorrowNote: "Lock +2.13% bounce ($100.25 -> $102.39) | AH printed $88.92 drop",
+        tomorrowTarget: 91.50,
+        badgeType: "WARN",
         history: [
+          {
+            date: "10-30 00:15",
+            priorSignal: "BUY 50% @ $100.25",
+            forecastEY: 103.80,
+            actualPrice: 102.39,
+            accuracy: 98.62,
+            verdict: "WIN",
+            simAfter: "HK$10,107 (+1.07%)"
+          },
           {
             date: "10-29 13:40",
             priorSignal: "STAND ASIDE (0% CASH)",
@@ -174,7 +192,7 @@
                 <span class="text-[10px] uppercase tracking-wider text-slate-500 block">2 // Price Now</span>
                 <div class="text-xl font-bold text-white mt-1">${fmt(item.priceNow, item.name)}</div>
                 <span class="text-xs font-semibold ${item.changeToday.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">
-                  ${item.changeToday} Today
+                  ${item.changeToday}
                 </span>
               </div>
 
@@ -189,9 +207,9 @@
               </div>
             </div>
 
-            <!-- OCT 28–29 LOG ONLY -->
+            <!-- OCT 28–30 LOG ONLY -->
             <div class="border-t border-slate-800 pt-3">
-              <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Oct 28–29 Audit Log (Clean Start)</div>
+              <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Oct 28–30 Audit Log (Clean Start)</div>
               <table class="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr class="text-[10px] text-slate-500 uppercase border-b border-slate-800">
