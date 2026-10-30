@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>ModelSignal // Parallel Action & Accuracy</title>
+  <title>ModelSignal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
@@ -14,233 +14,161 @@
     }
   </style>
 </head>
-<body class="min-h-screen antialiased p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+<body class="min-h-screen antialiased p-4 md:p-8 max-w-5xl mx-auto space-y-6">
 
-  <!-- MINIMAL HEADER -->
-  <header class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+  <!-- HEADER -->
+  <header class="flex items-center justify-between border-b border-slate-800 pb-4">
     <div class="flex items-center gap-2.5">
-      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
       <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
-      <span class="text-xs text-slate-500">2026-10-30 00:15 UTC</span>
+      <span class="text-xs text-slate-500">30 OCT 2026</span>
     </div>
-    <div class="flex items-center gap-3 text-xs">
-      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-        <span class="text-slate-400">TOTAL WIN RATE:</span>
-        <span id="globalWinRate" class="text-emerald-400 font-bold ml-1">--%</span>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-        <span class="text-slate-400">MEAN FORECAST ACC:</span>
-        <span id="globalAcc" class="text-cyan-400 font-bold ml-1">--%</span>
-      </div>
+    <div class="text-xs bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+      <span class="text-slate-400">TOTAL WIN RATE:</span>
+      <span id="totalWinRate" class="text-emerald-400 font-bold ml-1">--%</span>
     </div>
   </header>
 
   <!-- PARALLEL COLUMNS: LEFT = BTC-USD | RIGHT = SOXL -->
-  <main id="parallelGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></main>
+  <main id="grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></main>
 
   <script>
-    // =========================================================================
-    // CLEAN DATA STARTING OCT 28–30 ONLY (OCT 26 & 27 REMOVED)
-    // =========================================================================
-    const ASSETS = {
-      "BTC-USD": {
-        name: "BTC-USD",
-        simStart: 10000,
-        simCurrent: 9879,
-        simPct: "-1.21%",
-        allocNow: "0% CASH (STOPPED @ $79.4K)",
-        priceNow: 77792.42,
-        changeToday: "-2.75% (Low $77,771)",
-        tomorrowAction: "STAND ASIDE (0% CASH)",
-        tomorrowNote: "Broke <$79,400 Stop | Wait for $75.5K–$76.8K base or >$79,400 reclaim",
-        tomorrowTarget: 76800.00,
-        badgeType: "WARN",
+    const DATA = [
+      {
+        ticker: "BTC-USD",
+        simUSD: "$9,879",
+        simChange: "-1.21%",
+        priceNow: "$77,344.42",
+        priceChange: "-3.00% (Low: $76,418)",
+        action: "WAIT IN CASH",
+        actionColor: "amber",
+        forecastTomorrow: "$75,800.00",
+        yesterdayResult: "WIN",
+        yesterdayAcc: "99.3%",
+        yesterdayCompare: "Forecast $76,800 → Actual $77,344",
         history: [
-          {
-            date: "10-30 00:15",
-            priorSignal: "HOLD 50% / CUT < $79.4K",
-            forecastEY: 79650.00,
-            actualPrice: 77792.42,
-            accuracy: 97.61,
-            verdict: "LOSS",
-            simAfter: "HK$9,879 (-1.21%)"
-          },
-          {
-            date: "10-29 13:37",
-            priorSignal: "HOLD / ADD > $81.8K",
-            forecastEY: 81650.00,
-            actualPrice: 79993.11,
-            accuracy: 97.93,
-            verdict: "LOSS",
-            simAfter: "HK$9,916 (-0.84%)"
-          },
-          {
-            date: "10-29 00:39",
-            priorSignal: "HOLD CORE (10-28)",
-            forecastEY: 80495.00,
-            actualPrice: 81085.88,
-            accuracy: 99.27,
-            verdict: "WIN",
-            simAfter: "HK$10,052 (+0.52%)"
-          }
+          { date: "Oct 30", action: "WAIT IN CASH", compare: "$76,800 → $77,344", acc: "99.3%", result: "WIN" },
+          { date: "Oct 29 PM", action: "HOLD 50%", compare: "$79,650 → $77,792", acc: "97.6%", result: "LOSS" },
+          { date: "Oct 29 AM", action: "HOLD", compare: "$81,650 → $79,993", acc: "97.9%", result: "LOSS" },
+          { date: "Oct 28", action: "HOLD", compare: "$80,495 → $81,086", acc: "99.3%", result: "WIN" }
         ]
       },
-      "SOXL": {
-        name: "SOXL",
-        simStart: 10000,
-        simCurrent: 10107,
-        simPct: "+1.07%",
-        allocNow: "50% -> 0% EXIT",
-        priceNow: 102.39,
-        changeToday: "-4.62% (AH: $88.92)",
-        tomorrowAction: "EXIT @ OPEN / STAND ASIDE",
-        tomorrowNote: "Lock +2.13% bounce ($100.25 -> $102.39) | AH printed $88.92 drop",
-        tomorrowTarget: 91.50,
-        badgeType: "WARN",
+      {
+        ticker: "SOXL",
+        simUSD: "$10,107",
+        simChange: "+1.07%",
+        priceNow: "$84.77",
+        priceChange: "-17.21% Overnight (Bid: $88.25)",
+        action: "BUY @ $85.00–$88.30",
+        actionColor: "emerald",
+        forecastTomorrow: "$89.50",
+        yesterdayResult: "WIN",
+        yesterdayAcc: "92.6%",
+        yesterdayCompare: "Forecast $91.50 → Actual $84.77",
         history: [
-          {
-            date: "10-30 00:15",
-            priorSignal: "BUY 50% @ $100.25",
-            forecastEY: 103.80,
-            actualPrice: 102.39,
-            accuracy: 98.62,
-            verdict: "WIN",
-            simAfter: "HK$10,107 (+1.07%)"
-          },
-          {
-            date: "10-29 13:40",
-            priorSignal: "STAND ASIDE (0% CASH)",
-            forecastEY: 104.20,
-            actualPrice: 100.25,
-            accuracy: 96.06,
-            verdict: "WIN",
-            simAfter: "HK$10,000 (0.00%)"
-          },
-          {
-            date: "10-29 00:39",
-            priorSignal: "STAND ASIDE (10-28)",
-            forecastEY: 96.65,
-            actualPrice: 107.35,
-            accuracy: 90.03,
-            verdict: "LOSS",
-            simAfter: "HK$10,000 (0.00%)"
-          }
+          { date: "Oct 30", action: "EXIT / CASH", compare: "$91.50 → $84.77", acc: "92.6%", result: "WIN" },
+          { date: "Oct 29 PM", action: "BUY @ $100.25", compare: "$103.80 → $102.39", acc: "98.6%", result: "WIN" },
+          { date: "Oct 29 AM", action: "WAIT IN CASH", compare: "$104.20 → $100.25", acc: "96.1%", result: "WIN" },
+          { date: "Oct 28", action: "WAIT IN CASH", compare: "$96.65 → $107.35", acc: "90.0%", result: "LOSS" }
         ]
       }
-    };
-
-    const fmt = (val, asset) =>
-      asset === "BTC-USD"
-        ? "$" + Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : "$" + Number(val).toFixed(2);
-
-    const signalStyle = (type) => {
-      if (type === "BUY") return "bg-emerald-500/15 border-emerald-500/50 text-emerald-300";
-      if (type === "WARN") return "bg-amber-500/15 border-amber-500/50 text-amber-300";
-      return "bg-cyan-500/15 border-cyan-500/50 text-cyan-300";
-    };
+    ];
 
     function render() {
-      const allRows = [...ASSETS["BTC-USD"].history, ...ASSETS["SOXL"].history];
-      const totalWins = allRows.filter(r => r.verdict === "WIN").length;
-      const meanAcc = allRows.reduce((s, r) => s + r.accuracy, 0) / allRows.length;
+      const all = DATA.flatMap(d => d.history);
+      const totalWins = all.filter(r => r.result === "WIN").length;
+      document.getElementById("totalWinRate").textContent =
+        `${Math.round((totalWins / all.length) * 100)}% (${totalWins}/${all.length})`;
 
-      document.getElementById("globalWinRate").textContent =
-        `${Math.round((totalWins / allRows.length) * 100)}% (${totalWins}/${allRows.length})`;
-      document.getElementById("globalAcc").textContent = `${meanAcc.toFixed(2)}%`;
-
-      const cols = ["BTC-USD", "SOXL"].map(key => {
-        const item = ASSETS[key];
-        const wins = item.history.filter(r => r.verdict === "WIN").length;
+      document.getElementById("grid").innerHTML = DATA.map(item => {
+        const wins = item.history.filter(r => r.result === "WIN").length;
         const winRate = Math.round((wins / item.history.length) * 100);
-        const avgAcc = (item.history.reduce((s, r) => s + r.accuracy, 0) / item.history.length).toFixed(2);
-        const latestAudit = item.history[0];
+        const boxStyle = item.actionColor === "emerald"
+          ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
+          : "bg-amber-500/15 border-amber-500/50 text-amber-300";
 
         return `
-          <section class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 flex flex-col justify-between space-y-5">
+          <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
 
-            <!-- HEADER: ASSET + WIN RATE + 10K SIMULATOR -->
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <!-- TOP ROW: TICKER + WIN RATE + $10K USD SIMULATOR -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <h2 class="text-lg font-bold text-white tracking-wide">${item.name}</h2>
+                <h2 class="text-xl font-bold text-white">${item.ticker}</h2>
                 <span class="text-xs text-slate-400">
                   WIN RATE: <strong class="text-emerald-400">${winRate}% (${wins}/${item.history.length})</strong>
-                  · MEAN ACC: <strong class="text-cyan-400">${avgAcc}%</strong>
                 </span>
               </div>
               <div class="text-right bg-slate-950 border border-slate-800 px-3 py-1.5 rounded">
-                <span class="text-[10px] text-slate-500 block uppercase">HK$10K SIMULATOR (${item.allocNow})</span>
-                <span class="text-xs font-bold ${item.simCurrent >= 10000 ? 'text-emerald-400' : 'text-amber-400'}">
-                  HK$${item.simCurrent.toLocaleString()} (${item.simPct})
+                <span class="text-[10px] text-slate-500 block">$10,000 USD SIM</span>
+                <span class="text-sm font-bold ${item.simChange.startsWith('+') ? 'text-emerald-400' : 'text-amber-400'}">
+                  ${item.simUSD} (${item.simChange})
                 </span>
               </div>
             </div>
 
-            <!-- 1. BIG SIGNAL / TOMORROW'S ACTION -->
-            <div class="p-4 rounded-lg border ${signalStyle(item.badgeType)}">
-              <div class="flex items-center justify-between text-[11px] uppercase tracking-wider opacity-80">
-                <span>1 // Tomorrow's Action (Big Signal)</span>
-                <span>Next 24H Target: <strong>${fmt(item.tomorrowTarget, item.name)}</strong></span>
+            <!-- 1. PRICE NOW -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3.5 flex items-baseline justify-between">
+              <div>
+                <span class="text-[10px] uppercase text-slate-500 block">Price Now</span>
+                <span class="text-2xl font-bold text-white">${item.priceNow}</span>
               </div>
-              <div class="text-2xl font-extrabold tracking-tight mt-1.5">${item.tomorrowAction}</div>
-              <div class="text-xs mt-1 opacity-90">${item.tomorrowNote}</div>
+              <span class="text-xs font-semibold text-rose-400">${item.priceChange}</span>
             </div>
 
-            <!-- 2. PRICE NOW & 3. YESTERDAY'S ACCURACY -->
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-slate-950 border border-slate-800/90 rounded-lg p-3.5">
-                <span class="text-[10px] uppercase tracking-wider text-slate-500 block">2 // Price Now</span>
-                <div class="text-xl font-bold text-white mt-1">${fmt(item.priceNow, item.name)}</div>
-                <span class="text-xs font-semibold ${item.changeToday.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">
-                  ${item.changeToday}
-                </span>
+            <!-- 2. TOMORROW'S FORECAST & ACTION -->
+            <div class="p-4 rounded-lg border ${boxStyle}">
+              <div class="flex items-center justify-between text-xs uppercase opacity-80">
+                <span>Action Signal</span>
+                <span>Tomorrow Forecast</span>
               </div>
-
-              <div class="bg-slate-950 border border-slate-800/90 rounded-lg p-3.5">
-                <span class="text-[10px] uppercase tracking-wider text-slate-500 block">3 // Yesterday's Accuracy</span>
-                <div class="text-xl font-bold mt-1 ${latestAudit.verdict === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
-                  ${latestAudit.accuracy}% (${latestAudit.verdict})
-                </div>
-                <span class="text-xs text-slate-400 block">
-                  Target: ${fmt(latestAudit.forecastEY, item.name)}
-                </span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span class="text-xl font-extrabold">${item.action}</span>
+                <span class="text-xl font-extrabold">${item.forecastTomorrow}</span>
               </div>
             </div>
 
-            <!-- OCT 28–30 LOG ONLY -->
-            <div class="border-t border-slate-800 pt-3">
-              <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Oct 28–30 Audit Log (Clean Start)</div>
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="text-[10px] text-slate-500 uppercase border-b border-slate-800">
-                    <th class="py-1.5">Date</th>
-                    <th class="py-1.5">Prior Action</th>
-                    <th class="py-1.5">Target vs Actual</th>
-                    <th class="py-1.5 text-right">Forecast Acc</th>
+            <!-- 3. YESTERDAY'S ACCURACY -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3.5 flex items-center justify-between">
+              <div>
+                <span class="text-[10px] uppercase text-slate-500 block">Yesterday's Accuracy</span>
+                <span class="text-xs text-slate-300 mt-0.5 block">${item.yesterdayCompare}</span>
+              </div>
+              <span class="text-sm font-bold px-2.5 py-1 rounded ${
+                item.yesterdayResult === 'WIN'
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-rose-500/20 text-rose-400'
+              }">
+                ${item.yesterdayResult} (${item.yesterdayAcc})
+              </span>
+            </div>
+
+            <!-- PAST ACCURACY LOG -->
+            <table class="w-full text-left text-xs border-t border-slate-800 pt-2">
+              <thead>
+                <tr class="text-[10px] text-slate-500 uppercase border-b border-slate-800">
+                  <th class="py-1.5">Date</th>
+                  <th class="py-1.5">Signal</th>
+                  <th class="py-1.5">Forecast → Actual</th>
+                  <th class="py-1.5 text-right">Result</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${item.history.map(r => `
+                  <tr>
+                    <td class="py-2 text-slate-400">${r.date}</td>
+                    <td class="py-2 text-slate-200">${r.action}</td>
+                    <td class="py-2 text-slate-300">${r.compare}</td>
+                    <td class="py-2 text-right font-bold ${r.result === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
+                      ${r.result} (${r.acc})
+                    </td>
                   </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                  ${item.history.map(r => `
-                    <tr>
-                      <td class="py-2 text-slate-400 whitespace-nowrap">${r.date}</td>
-                      <td class="py-2 text-slate-200 font-medium">${r.priorSignal}</td>
-                      <td class="py-2 text-slate-300 whitespace-nowrap">
-                        ${fmt(r.forecastEY, item.name)} → <strong class="text-white">${fmt(r.actualPrice, item.name)}</strong>
-                      </td>
-                      <td class="py-2 text-right font-bold whitespace-nowrap ${r.verdict === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
-                        ${r.accuracy}% (${r.verdict})
-                      </td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
+                `).join("")}
+              </tbody>
+            </table>
 
           </section>
         `;
-      });
-
-      document.getElementById("parallelGrid").innerHTML = cols.join("");
+      }).join("");
     }
 
     render();
