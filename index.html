@@ -24,7 +24,7 @@
     <div class="flex items-center gap-2.5">
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
       <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
-      <span class="text-xs text-slate-500">31 OCT 2026 // 01:21 UTC</span>
+      <span class="text-xs text-slate-500">31 OCT 2026 // 14:08 UTC</span>
     </div>
     <div class="flex items-center gap-2 text-xs">
       <div id="integrityBadge" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded text-slate-400">
@@ -107,6 +107,18 @@
           actualPrice: 77381.96,
           entryFill: null,
           exitFill: null
+        }),
+        Object.freeze({
+          id: "BTC-06",
+          date: "Oct 31 PM",
+          signal: "WAIT IN CASH",
+          mode: "CASH",
+          alloc: 0.00,
+          spotAtIssue: 77381.96,
+          forecastPrice: 76850.00,
+          actualPrice: 77359.44,
+          entryFill: null,
+          exitFill: null
         })
       ]),
       "SOXL": Object.freeze([
@@ -178,17 +190,17 @@
     // =========================================================================
     const LIVE_STATE = Object.freeze({
       "BTC-USD": {
-        priceNow: 77381.96,
-        priceChange: "+0.26% (+201.54 Today)",
+        priceNow: 77359.44,
+        priceChange: "+0.23% (Day Low: $76,490)",
         changePositive: true,
-        nextSignalId: "BTC-06",
+        nextSignalId: "BTC-07",
         action: "WAIT IN CASH",
         actionColor: "amber",
-        forecastTomorrow: 76850.00
+        forecastTomorrow: 76900.00
       },
       "SOXL": {
         priceNow: 77.05,
-        priceChange: "-24.75% (Low: $70.23 · AH: $77.18)",
+        priceChange: "-24.75% (Fri AH: $78.01 · Mkt Closed)",
         changePositive: false,
         nextSignalId: "SOXL-06",
         action: "WAIT IN CASH",
