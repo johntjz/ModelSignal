@@ -24,7 +24,7 @@
     <div class="flex items-center gap-2.5">
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
       <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
-      <span class="text-xs text-slate-500">03 NOV 2026</span>
+      <span class="text-xs text-slate-500">04 NOV 2026</span>
     </div>
     <div class="flex items-center gap-2 text-xs">
       <div id="integrityBadge" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded text-slate-400"></div>
@@ -136,6 +136,19 @@
           entryFill: null,
           exitFill: null,
           seal: "804195"
+        }),
+        Object.freeze({
+          id: "BTC-08",
+          date: "Nov 03",
+          signal: "WAIT IN CASH",
+          mode: "CASH",
+          alloc: 0.00,
+          spotAtIssue: 76545.70,
+          forecastPrice: 75800.00,
+          actualPrice: 75832.72,
+          entryFill: null,
+          exitFill: null,
+          seal: "369798"
         })
       ]),
       "SOXL": Object.freeze([
@@ -216,32 +229,45 @@
           entryFill: null,
           exitFill: null,
           seal: "835070"
+        }),
+        Object.freeze({
+          id: "SOXL-07",
+          date: "Nov 03",
+          signal: "BUY 50%",
+          mode: "LONG",
+          alloc: 0.50,
+          spotAtIssue: 68.17,
+          forecastPrice: 71.50,
+          actualPrice: 73.12,
+          entryFill: 68.17,
+          exitFill: 73.12,
+          seal: "038872"
         })
       ])
     });
 
     // =========================================================================
-    // 2. TODAY'S SNAPSHOT & NEXT LOCKED FORECAST
+    // 2. TODAY'S SNAPSHOT & NEXT LOCKED FORECAST (DEEP FROZEN)
     // =========================================================================
     const LIVE_STATE = Object.freeze({
-      "BTC-USD": {
-        priceNow: 76545.70,
-        priceNote: "-1.1% vs prior",
+      "BTC-USD": Object.freeze({
+        priceNow: 75832.72,
+        priceNote: "-1.3% (24h)",
         isUp: false,
-        nextSignalId: "BTC-08",
+        nextSignalId: "BTC-09",
         action: "WAIT IN CASH",
         actionColor: "amber",
-        forecastTomorrow: 75800.00
-      },
-      "SOXL": {
-        priceNow: 68.17,
-        priceNote: "-11.5% (AH: $69.81)",
-        isUp: false,
-        nextSignalId: "SOXL-07",
-        action: "BUY 50%",
-        actionColor: "emerald",
-        forecastTomorrow: 71.50
-      }
+        forecastTomorrow: 75100.00
+      }),
+      "SOXL": Object.freeze({
+        priceNow: 73.12,
+        priceNote: "+7.3% (OVN: $66.06)",
+        isUp: true,
+        nextSignalId: "SOXL-08",
+        action: "WAIT IN CASH",
+        actionColor: "amber",
+        forecastTomorrow: 66.50
+      })
     });
 
     // =========================================================================
@@ -260,6 +286,14 @@
       };
     }
 
+    function formatPct(rawPct) {
+      const absVal = Math.abs(rawPct);
+      if (absVal === 0) return "0.0%";
+      const decimals = absVal < 0.1 ? 2 : 1;
+      const sign = rawPct > 0 ? "+" : "-";
+      return `${sign}${absVal.toFixed(decimals)}%`;
+    }
+
     function evaluateTickerHistory(rows) {
       let prevSeal = 100000;
       return rows.map(r => {
@@ -267,37 +301,38 @@
         prevSeal = calc.num;
         const sealValid = calc.str === r.seal;
 
-        // Whole-number forecast proximity %
+        // Forecast proximity % (capped at 99.9% unless exact match)
         const errorRatio = Math.abs(r.forecastPrice - r.actualPrice) / r.spotAtIssue;
-        const accWhole = Math.max(0, Math.round((1 - errorRatio) * 100)) + "% Acc";
+        const rawAcc = Math.max(0, (1 - errorRatio) * 100);
+        const accDisplay = (errorRatio === 0 ? "100.0" : Math.min(99.9, rawAcc).toFixed(1)) + "% Acc";
 
-        // Intuitive outcome label (what the action actually did)
+        // Intuitive outcome label (eliminates -0% and double negatives)
         let isWin = false;
         let outcomeText = "";
 
         if (r.mode === "LONG") {
-          const tradePct = Math.round(((r.exitFill - r.entryFill) / r.entryFill) * 100);
+          const rawTradePct = ((r.exitFill - r.entryFill) / r.entryFill) * 100;
           isWin = r.exitFill > r.entryFill;
-          const sign = tradePct >= 0 ? "+" : "";
-          outcomeText = isWin ? `WIN · Gained ${sign}${tradePct}%` : `LOSS · ${sign}${tradePct}%`;
+          outcomeText = isWin
+            ? `WIN · Gained ${formatPct(rawTradePct)}`
+            : `LOSS · ${formatPct(rawTradePct)}`;
         } else {
-          const movePct = Math.round(((r.actualPrice - r.spotAtIssue) / r.spotAtIssue) * 100);
+          const rawMovePct = ((r.actualPrice - r.spotAtIssue) / r.spotAtIssue) * 100;
           const predDelta = r.forecastPrice - r.spotAtIssue;
           const actDelta = r.actualPrice - r.spotAtIssue;
           isWin = (predDelta < 0 && actDelta < 0) || (predDelta > 0 && actDelta > 0);
           if (isWin && actDelta < 0) {
-            outcomeText = `WIN · Saved ${movePct}%`;
+            outcomeText = `WIN · Avoided ${formatPct(rawMovePct)}`;
           } else if (isWin) {
             outcomeText = `WIN · On Target`;
           } else {
-            const sign = movePct >= 0 ? "+" : "";
-            outcomeText = `LOSS · Missed ${sign}${movePct}%`;
+            outcomeText = `LOSS · Missed ${formatPct(rawMovePct)}`;
           }
         }
 
         return {
           ...r,
-          accWhole,
+          accWhole: accDisplay,
           outcomeText,
           result: isWin ? "WIN" : "LOSS",
           sealValid
@@ -308,16 +343,17 @@
     function simulate10K(rows) {
       let balance = 10000.00;
       for (const r of rows) {
-        if (r.mode === "LONG" && r.alloc > 0 && r.entryFill && r.exitFill) {
+        if (r.mode === "LONG" && r.alloc > 0 && r.entryFill != null && r.exitFill != null) {
           const ret = (r.exitFill - r.entryFill) / r.entryFill;
           balance = balance * (1 + r.alloc * ret);
         }
       }
-      const pct = Math.round(((balance - 10000) / 10000) * 100);
+      const rawPct = ((balance - 10000) / 10000) * 100;
+      const isPos = balance >= 10000;
       return {
         usd: "$" + Math.round(balance).toLocaleString("en-US"),
-        pct: (pct >= 0 ? "+" : "") + pct + "%",
-        isPos: balance >= 10000
+        pct: formatPct(rawPct),
+        isPos
       };
     }
 
@@ -339,7 +375,7 @@
 
         const sim = simulate10K(evaluated);
         const desc = [...evaluated].reverse();
-        const yesterday = desc[0];
+        const latest = desc[0];
         const live = LIVE_STATE[ticker];
 
         const wins = evaluated.filter(r => r.result === "WIN").length;
@@ -348,6 +384,8 @@
         const actionBoxStyle = live.actionColor === "emerald"
           ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
           : "bg-amber-500/15 border-amber-500/50 text-amber-300";
+
+        const noteColor = live.isUp ? "text-emerald-300" : "text-rose-300";
 
         return `
           <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
@@ -370,8 +408,8 @@
 
             <!-- 1. NOW & NEXT FORECAST -->
             <div class="p-4 rounded-lg border ${actionBoxStyle} space-y-2">
-              <div class="flex items-center justify-between text-xs opacity-80">
-                <span>NOW: <strong class="text-white">${fmt(live.priceNow, ticker)}</strong> (${live.priceNote})</span>
+              <div class="flex items-center justify-between text-xs opacity-90">
+                <span>NOW: <strong class="text-white">${fmt(live.priceNow, ticker)}</strong> <span class="${noteColor}">(${live.priceNote})</span></span>
                 <span>NEXT LOCK: #${live.nextSignalId}</span>
               </div>
               <div class="flex items-baseline justify-between pt-1">
@@ -386,25 +424,25 @@
               </div>
             </div>
 
-            <!-- 2. YESTERDAY'S OUTCOME -->
+            <!-- 2. LATEST SETTLED OUTCOME -->
             <div class="bg-slate-950 border border-slate-800 rounded-lg p-3.5 flex items-center justify-between gap-2">
               <div>
                 <span class="text-[10px] uppercase text-slate-500 block">
-                  Yesterday (${yesterday.date} · ${yesterday.signal})
+                  Latest Settled (${latest.date} · ${latest.signal})
                 </span>
                 <span class="text-xs text-slate-300 mt-0.5 block">
-                  Forecast ${fmt(yesterday.forecastPrice, ticker)} → Actual <strong class="text-white">${fmt(yesterday.actualPrice, ticker)}</strong>
+                  Forecast ${fmt(latest.forecastPrice, ticker)} → Actual <strong class="text-white">${fmt(latest.actualPrice, ticker)}</strong>
                 </span>
               </div>
               <div class="text-right">
                 <span class="inline-block text-xs font-bold px-2.5 py-1 rounded ${
-                  yesterday.result === 'WIN'
+                  latest.result === 'WIN'
                     ? 'bg-emerald-500/20 text-emerald-400'
                     : 'bg-rose-500/20 text-rose-400'
                 }">
-                  ${yesterday.outcomeText}
+                  ${latest.outcomeText}
                 </span>
-                <span class="block text-[10px] text-slate-500 mt-1">${yesterday.accWhole} · Seal #${yesterday.seal}</span>
+                <span class="block text-[10px] text-slate-500 mt-1">${latest.accWhole} · Seal #${latest.seal}</span>
               </div>
             </div>
 
@@ -435,6 +473,11 @@
                       </td>
                       <td class="py-2.5 px-2 text-slate-300 whitespace-nowrap">
                         ${fmt(r.forecastPrice, ticker)} → <strong class="text-white">${fmt(r.actualPrice, ticker)}</strong>
+                        ${r.mode === "LONG" && r.entryFill != null && r.exitFill != null ? `
+                          <span class="block text-[10px] text-slate-500">
+                            Fill: ${fmt(r.entryFill, ticker)} → ${fmt(r.exitFill, ticker)}
+                          </span>
+                        ` : ""}
                       </td>
                       <td class="py-2.5 pl-2 text-right whitespace-nowrap">
                         <span class="font-bold ${r.result === 'WIN' ? 'text-emerald-400' : 'text-rose-400'}">
