@@ -16,16 +16,22 @@
 </head>
 <body class="min-h-screen antialiased p-4 md:p-8 max-w-6xl mx-auto space-y-6">
 
+  <!-- TAMPER BANNER -->
+  <div id="tamperBanner" class="hidden bg-rose-950/90 border-2 border-rose-500 text-rose-200 p-4 rounded-xl text-xs space-y-1"></div>
+
   <!-- MINIMAL HEADER -->
-  <header class="flex items-center justify-between border-b border-slate-800 pb-4">
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
     <div class="flex items-center gap-2.5">
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
       <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
       <span id="asOfDate" class="text-xs text-slate-500">--</span>
     </div>
-    <div class="text-xs bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-      <span class="text-slate-400">EXECUTED TRADE WIN RATE:</span>
-      <span id="totalWinRate" class="text-emerald-400 font-bold ml-1">--</span>
+    <div class="flex items-center gap-2 text-xs">
+      <div id="integrityBadge" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded text-slate-400"></div>
+      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
+        <span class="text-slate-400">EXECUTED TRADE WIN RATE:</span>
+        <span id="totalWinRate" class="text-emerald-400 font-bold ml-1">--</span>
+      </div>
     </div>
   </header>
 
@@ -48,16 +54,39 @@
     const fmtQty = (qty, ticker) =>
       ticker === "BTC-USD" ? `${qty.toFixed(6)} BTC` : `${qty.toFixed(2)} sh`;
 
-    function runPortfolioSim(tuples, ticker) {
+    function computeRowSeal(prevSealNum, r) {
+      const s1 = Math.round(r.spotAtIssue * 100);
+      const s2 = Math.round(r.forecastPrice * 100);
+      const s3 = Math.round(r.actualPrice * 100);
+      const s4 = Math.round((r.alloc || 0) * 100);
+      const m = r.mode === "LONG" ? 7 : 3;
+      const next = (prevSealNum * 31 + s1 * 3 + s2 * 7 + s3 * 11 + s4 * 13 + m * 17) % 1000000;
+      return {
+        num: next,
+        str: String(next).padStart(6, "0")
+      };
+    }
+
+    function runPortfolioSim(tuples) {
       let balance = 10000.00;
       let wins = 0;
       let executedTrades = 0;
+      let prevSeal = 100000;
 
       const rows = tuples.map(t => {
-        const [id, date, signal, mode, alloc, spotAtIssue, forecastPrice, actualPrice, entryFill, exitFill] = t;
+        const [id, date, signal, mode, alloc, spotAtIssue, forecastPrice, actualPrice, entryFill, exitFill, seal] = t;
+        const rowObj = { id, date, signal, mode, alloc, spotAtIssue, forecastPrice, actualPrice, entryFill, exitFill, seal };
+        const calc = computeRowSeal(prevSeal, rowObj);
+        prevSeal = calc.num;
+        const sealValid = calc.str === seal;
+
+        if (!sealValid) {
+          console.warn(`[ModelSignal Seal Helper] Row ${id} (${date}) expected seal: "${calc.str}" (found: "${seal}")`);
+        }
+
         let qty = 0;
         let pnl = 0;
-        let isTrade = mode === "LONG" && alloc > 0 && entryFill != null && exitFill != null;
+        const isTrade = mode === "LONG" && alloc > 0 && entryFill != null && exitFill != null;
 
         if (isTrade) {
           const deployed = balance * alloc;
@@ -69,20 +98,12 @@
         }
 
         return {
-          id,
-          date,
-          signal,
-          mode,
-          alloc,
-          spotAtIssue,
-          forecastPrice,
-          actualPrice,
-          entryFill,
-          exitFill,
+          ...rowObj,
           qty,
           pnl,
           balanceAfter: balance,
-          isTrade
+          isTrade,
+          sealValid
         };
       });
 
@@ -103,16 +124,22 @@
 
       let totalWins = 0;
       let totalTrades = 0;
+      let totalRows = 0;
+      let brokenSeals = [];
 
       const colsHtml = Object.keys(data.history).map(ticker => {
-        const sim = runPortfolioSim(data.history[ticker], ticker);
+        const sim = runPortfolioSim(data.history[ticker]);
         totalWins += sim.wins;
         totalTrades += sim.executedTrades;
+        totalRows += sim.rows.length;
+
+        sim.rows.forEach(r => {
+          if (!r.sealValid) brokenSeals.push(`${r.id} (${r.date})`);
+        });
 
         const live = data.live[ticker];
         const descRows = [...sim.rows].reverse();
 
-        // Compute live next order size if action is BUY
         const nextCapital = sim.balance * (live.alloc || 0);
         const refFill = live.orderRefPrice || live.priceNow;
         const nextQty = nextCapital > 0 ? fmtQty(nextCapital / refFill, ticker) : "0 (100% Cash)";
@@ -169,10 +196,10 @@
               </div>
             </div>
 
-            <!-- 4. SIMULATED TRADE RESULTS (BUY / SELL / QTY / P&L) -->
+            <!-- 4. SIMULATED TRADE RESULTS (BUY / SELL / QTY / P&L / SEAL) -->
             <div class="border-t border-slate-800 pt-3">
               <div class="text-[10px] uppercase text-slate-500 mb-2">
-                4 // Simulated Trade Ledger (Buy Price · Sell Price · Quantity · P&L)
+                4 // Simulated Trade Ledger (Buy Price · Sell Price · Quantity · P&L · Seal)
               </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
@@ -190,6 +217,9 @@
                         <td class="py-2 pr-2 text-slate-400 whitespace-nowrap">
                           ${r.date}
                           <span class="block text-[10px] text-slate-500">${r.signal}</span>
+                          <span class="block text-[9px] ${r.sealValid ? 'text-slate-600' : 'text-rose-400 font-bold'}">
+                            ${r.sealValid ? '#' + r.seal : 'TAMPERED'}
+                          </span>
                         </td>
                         <td class="py-2 px-2 text-slate-300 whitespace-nowrap">
                           ${fmtUSD(r.forecastPrice)} → <strong class="text-white">${fmtUSD(r.actualPrice)}</strong>
@@ -222,6 +252,16 @@
           </section>
         `;
       });
+
+      const badge = document.getElementById("integrityBadge");
+      const banner = document.getElementById("tamperBanner");
+      if (brokenSeals.length > 0) {
+        banner.classList.remove("hidden");
+        banner.innerHTML = `<div class="font-bold">TAMPER ALERT — Historical Row Seal Broken: ${brokenSeals.join(", ")}</div>`;
+        badge.innerHTML = `ROW SEALS: <span class="text-rose-400 font-bold">TAMPERED</span>`;
+      } else {
+        badge.innerHTML = `ROW SEALS: <span class="text-cyan-400 font-bold">ALL ${totalRows} LOCKED</span>`;
+      }
 
       const pct = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
       document.getElementById("totalWinRate").textContent = `${pct}% (${totalWins}/${totalTrades} Trades)`;
