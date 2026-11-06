@@ -3,7 +3,7 @@
 // Tuple format: [id, date, signal, mode, alloc, spotAtIssue, forecastPrice, actualPrice, entryFill, exitFill, seal]
 // ============================================================================
 window.MODEL_SIGNAL_DATA = Object.freeze({
-  asOfDate: "07 NOV 2026 // 06:26 HKT",
+  asOfDate: "07 NOV 2026 // 06:39 HKT",
 
   history: Object.freeze({
     "BTC-USD": [
