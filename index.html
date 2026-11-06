@@ -4,55 +4,86 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>ModelSignal</title>
+  <title>ModelSignal // Tactical Execution & Telemetry</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
       background-color: #06090e;
       color: #f1f5f9;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #06090e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
     }
   </style>
 </head>
-<body class="min-h-screen antialiased p-4 md:p-8 max-w-6xl mx-auto space-y-6">
+<body class="min-h-screen antialiased p-4 md:p-6 max-w-6xl mx-auto space-y-5">
 
   <!-- TAMPER BANNER -->
   <div id="tamperBanner" class="hidden bg-rose-950/90 border-2 border-rose-500 text-rose-200 p-4 rounded-xl text-xs space-y-1"></div>
 
-  <!-- MINIMAL HEADER -->
-  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+  <!-- HEADER -->
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
     <div class="flex items-center gap-2.5">
-      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
       <h1 class="text-sm font-bold tracking-widest text-white uppercase">MODELSIGNAL</h1>
       <span id="asOfDate" class="text-xs text-slate-500">--</span>
     </div>
-    <div class="flex items-center gap-2 text-xs">
-      <div id="integrityBadge" class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded text-slate-400"></div>
-      <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded">
-        <span class="text-slate-400">EXECUTED TRADE WIN RATE:</span>
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      <div id="integrityBadge" class="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded text-slate-400"></div>
+      <div class="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded">
+        <span class="text-slate-400">TRADE WIN RATE:</span>
         <span id="totalWinRate" class="text-emerald-400 font-bold ml-1">--</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 px-2.5 py-1 rounded">
+        <span class="text-slate-400">CALL ACCURACY:</span>
+        <span id="totalCallAcc" class="text-cyan-400 font-bold ml-1">--</span>
       </div>
     </div>
   </header>
 
   <!-- PARALLEL COLUMNS: BTC-USD (LEFT) | SOXL (RIGHT) -->
-  <main id="grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></main>
+  <main id="grid" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></main>
 
   <script>
     document.write('<script src="signals.js?v=' + Date.now() + '"><\/script>');
   </script>
 
   <script>
+    const FEE_PER_LEG = 0.0005; // 0.05% per execution leg (0.10% round-trip friction)
+    const MAX_DD_LIMIT = 15.0;  // 15% Portfolio Drawdown Circuit Breaker
+
+    let ledgerFilter = "ALL"; // "ALL" | "TRADES" | "HIDE"
+
     const fmtUSD = (val) =>
       "$" + Number(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const fmtCompactUSD = (val, ticker) =>
+      ticker === "BTC-USD"
+        ? "$" + Math.round(Number(val)).toLocaleString("en-US")
+        : "$" + Number(val).toFixed(2);
 
     const fmtSignedUSD = (val) => {
       const sign = val > 0 ? "+" : val < 0 ? "-" : "";
       return sign + "$" + Math.abs(val).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+    const fmtSignedPct = (val, decimals = 2) => {
+      const sign = val > 0 ? "+" : val < 0 ? "-" : "";
+      return `${sign}${Math.abs(val).toFixed(decimals)}%`;
+    };
+
     const fmtQty = (qty, ticker) =>
-      ticker === "BTC-USD" ? `${qty.toFixed(6)} BTC` : `${qty.toFixed(2)} sh`;
+      ticker === "BTC-USD" ? `${qty.toFixed(5)} BTC` : `${qty.toFixed(2)} sh`;
 
     function computeRowSeal(prevSealNum, r) {
       const s1 = Math.round(r.spotAtIssue * 100);
@@ -67,11 +98,22 @@
       };
     }
 
-    function runPortfolioSim(tuples) {
+    function runPortfolioSim(tuples, livePriceNow) {
       let balance = 10000.00;
+      let netBalance = 10000.00; // Net of 0.05%/leg fee drag
+      let peakBalance = 10000.00;
+      let maxDrawdownPct = 0;
+
       let wins = 0;
       let executedTrades = 0;
+      let correctCalls = 0;
+      let totalAbsErrorPct = 0;
+      let totalSignedBiasPct = 0;
+      let totalFeesPaid = 0;
       let prevSeal = 100000;
+
+      const firstSpot = tuples.length > 0 ? tuples[0][5] : livePriceNow;
+      const hodlBalance = 10000.00 * (livePriceNow / firstSpot);
 
       const rows = tuples.map(t => {
         const [id, date, signal, mode, alloc, spotAtIssue, forecastPrice, actualPrice, entryFill, exitFill, seal] = t;
@@ -84,37 +126,100 @@
           console.warn(`[ModelSignal Seal Helper] Row ${id} (${date}) expected seal: "${calc.str}" (found: "${seal}")`);
         }
 
+        // Forecast error & directional accuracy for engine tuning
+        const signedErrorPct = ((forecastPrice - actualPrice) / spotAtIssue) * 100;
+        const absErrorPct = Math.abs(signedErrorPct);
+        totalAbsErrorPct += absErrorPct;
+        totalSignedBiasPct += signedErrorPct;
+
+        const actualMovePct = ((actualPrice - spotAtIssue) / spotAtIssue) * 100;
         let qty = 0;
         let pnl = 0;
+        let feeDrag = 0;
         const isTrade = mode === "LONG" && alloc > 0 && entryFill != null && exitFill != null;
+
+        let callCorrect = false;
+        let callSummary = "";
 
         if (isTrade) {
           const deployed = balance * alloc;
           qty = deployed / entryFill;
           pnl = qty * (exitFill - entryFill);
           balance += pnl;
+
+          const netDeployed = netBalance * alloc;
+          const netQty = netDeployed / entryFill;
+          const grossPnlOnNet = netQty * (exitFill - entryFill);
+          feeDrag = (netDeployed * FEE_PER_LEG) + ((netDeployed + grossPnlOnNet) * FEE_PER_LEG);
+          totalFeesPaid += feeDrag;
+          netBalance += (grossPnlOnNet - feeDrag);
+
           executedTrades++;
-          if (pnl > 0) wins++;
+          if (pnl > 0) {
+            wins++;
+            callCorrect = true;
+          }
+          const tradeRetPct = ((exitFill - entryFill) / entryFill) * 100;
+          callSummary = `${pnl >= 0 ? "WIN" : "LOSS"} (${fmtSignedPct(tradeRetPct, 1)})`;
+        } else {
+          // Evaluate CASH decision: sitting in cash when asset drops or stays flat (<= +0.5%) is a protective win
+          const predDelta = forecastPrice - spotAtIssue;
+          const actDelta = actualPrice - spotAtIssue;
+          callCorrect = actDelta <= 0 || (predDelta > 0 && actDelta > 0);
+          callSummary = actDelta < 0
+            ? `SAVED ${fmtSignedPct(actualMovePct, 1)}`
+            : `MISSED ${fmtSignedPct(actualMovePct, 1)}`;
         }
+
+        if (callCorrect) correctCalls++;
+
+        if (balance > peakBalance) peakBalance = balance;
+        const currentDd = ((peakBalance - balance) / peakBalance) * 100;
+        if (currentDd > maxDrawdownPct) maxDrawdownPct = currentDd;
 
         return {
           ...rowObj,
           qty,
           pnl,
+          feeDrag,
           balanceAfter: balance,
           isTrade,
-          sealValid
+          sealValid,
+          absErrorPct,
+          signedErrorPct,
+          actualMovePct,
+          callCorrect,
+          callSummary
         };
       });
+
+      const n = rows.length || 1;
+      const currentDrawdownPct = ((peakBalance - balance) / peakBalance) * 100;
 
       return {
         balance,
         netPnl: balance - 10000.00,
+        netBalance,
+        totalFeesPaid,
+        hodlBalance,
+        alphaUSD: balance - hodlBalance,
         wins,
         executedTrades,
+        correctCalls,
+        totalCalls: rows.length,
+        maePct: totalAbsErrorPct / n,
+        biasPct: totalSignedBiasPct / n,
+        maxDrawdownPct,
+        currentDrawdownPct,
+        circuitBreakerTripped: currentDrawdownPct >= MAX_DD_LIMIT,
         rows
       };
     }
+
+    window.setLedgerFilter = function(mode) {
+      ledgerFilter = mode;
+      render();
+    };
 
     function render() {
       const data = window.MODEL_SIGNAL_DATA;
@@ -124,129 +229,228 @@
 
       let totalWins = 0;
       let totalTrades = 0;
+      let totalCorrectCalls = 0;
       let totalRows = 0;
       let brokenSeals = [];
 
       const colsHtml = Object.keys(data.history).map(ticker => {
-        const sim = runPortfolioSim(data.history[ticker]);
+        const live = data.live[ticker];
+        const sim = runPortfolioSim(data.history[ticker], live.priceNow);
+
         totalWins += sim.wins;
         totalTrades += sim.executedTrades;
+        totalCorrectCalls += sim.correctCalls;
         totalRows += sim.rows.length;
 
         sim.rows.forEach(r => {
           if (!r.sealValid) brokenSeals.push(`${r.id} (${r.date})`);
         });
 
-        const live = data.live[ticker];
         const descRows = [...sim.rows].reverse();
+        const yesterday = descRows[0];
 
-        const nextCapital = sim.balance * (live.alloc || 0);
+        // Implied 24H Forecast Delta
+        const impliedMovePct = ((live.forecastTomorrow - live.priceNow) / live.priceNow) * 100;
+
+        // Next Order Execution Math (respects Circuit Breaker)
+        const effectiveAlloc = sim.circuitBreakerTripped ? 0.00 : (live.alloc || 0);
+        const nextCapital = sim.balance * effectiveAlloc;
         const refFill = live.orderRefPrice || live.priceNow;
-        const nextQty = nextCapital > 0 ? fmtQty(nextCapital / refFill, ticker) : "0 (100% Cash)";
+        const nextQty = nextCapital > 0 ? fmtQty(nextCapital / refFill, ticker) : "0 Qty";
         const nextOrderText = nextCapital > 0
           ? `Buy ${nextQty} @ ${fmtUSD(refFill)} (${fmtUSD(nextCapital)})`
-          : `0 Qty · Hold ${fmtUSD(sim.balance)} Cash`;
+          : `100% Cash · Hold ${fmtUSD(sim.balance)}`;
 
-        const decisionStyle = live.alloc > 0
+        const decisionStyle = effectiveAlloc > 0
           ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-300"
-          : "bg-amber-500/15 border-amber-500/50 text-amber-300";
+          : "bg-amber-500/10 border-amber-500/40 text-amber-300";
+
+        // Filter rows for compact ledger
+        const visibleRows = ledgerFilter === "TRADES"
+          ? descRows.filter(r => r.isTrade)
+          : ledgerFilter === "HIDE"
+            ? []
+            : descRows;
 
         return `
-          <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-5 space-y-3.5 min-w-0">
 
-            <!-- TOP BAR: TICKER & SIMULATED POOL BALANCE -->
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <!-- TOP BAR: TICKER, POOL, & ALPHA VS BUY-AND-HOLD -->
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
               <div>
-                <h2 class="text-xl font-bold text-white">${ticker}</h2>
-                <span class="text-xs text-slate-400">
-                  TRADES WON: <strong class="text-emerald-400">${sim.wins}/${sim.executedTrades}</strong>
-                </span>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-xl font-bold text-white">${ticker}</h2>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400">
+                    TRADES WON: <strong class="text-emerald-400">${sim.wins}/${sim.executedTrades}</strong>
+                  </span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1">
+                  vs $10k Buy & Hold (${fmtCompactUSD(sim.hodlBalance, ticker)}):
+                  <strong class="${sim.alphaUSD >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                    ${fmtSignedUSD(sim.alphaUSD)} Alpha
+                  </strong>
+                </div>
               </div>
+
               <div class="text-right bg-slate-950 border border-slate-800 px-3 py-1.5 rounded">
                 <span class="text-[10px] text-slate-500 block">$10,000 SIMULATED POOL</span>
                 <span class="text-sm font-bold ${sim.netPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
                   ${fmtUSD(sim.balance)} (${fmtSignedUSD(sim.netPnl)})
                 </span>
+                <span class="block text-[9px] text-slate-500">
+                  Net of 5bps/leg fees: ${fmtUSD(sim.netBalance)}
+                </span>
               </div>
             </div>
 
-            <!-- 1. PRICE NOW & 2. PRICE INFERRED -->
+            <!-- 1. PRICE NOW & 2. TOMORROW'S 24H INFERENCE (TOP PRIORITY) -->
             <div class="grid grid-cols-2 gap-3">
-              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3.5">
-                <span class="text-[10px] uppercase text-slate-500 block">1 // Price Now</span>
-                <span class="text-xl font-bold text-white mt-0.5 block">${fmtUSD(live.priceNow)}</span>
-                <span class="text-[11px] ${live.isUp ? 'text-emerald-400' : 'text-rose-400'}">${live.priceNote}</span>
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+                <span class="text-[10px] uppercase text-slate-500 block">1 // Today Price (Now)</span>
+                <span class="text-lg md:text-xl font-bold text-white mt-0.5 block">${fmtUSD(live.priceNow)}</span>
+                <span class="text-[11px] ${live.isUp ? 'text-emerald-400' : 'text-rose-400'} block truncate">
+                  ${live.priceNote}
+                </span>
               </div>
-              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3.5">
-                <span class="text-[10px] uppercase text-slate-500 block">2 // Price Inferred (24H)</span>
-                <span class="text-xl font-bold text-cyan-400 mt-0.5 block">${fmtUSD(live.forecastTomorrow)}</span>
-                <span class="text-[11px] text-slate-400">Signal ID: ${live.nextSignalId}</span>
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+                <div class="flex items-center justify-between text-[10px] uppercase text-slate-500">
+                  <span>2 // Tomorrow Inference</span>
+                  <span>#${live.nextSignalId}</span>
+                </div>
+                <span class="text-lg md:text-xl font-bold text-cyan-400 mt-0.5 block">${fmtUSD(live.forecastTomorrow)}</span>
+                <span class="text-[11px] ${impliedMovePct >= 0 ? 'text-emerald-400' : 'text-amber-400'} block">
+                  Implied 24H: ${fmtSignedPct(impliedMovePct, 2)}
+                </span>
               </div>
             </div>
 
-            <!-- 3. DECISION ENGINE -->
-            <div class="p-4 rounded-lg border ${decisionStyle}">
+            <!-- 3. DECISION ENGINE & RISK GOVERNOR -->
+            <div class="p-3.5 rounded-lg border ${decisionStyle} space-y-1.5">
               <div class="flex items-center justify-between text-[10px] uppercase opacity-80">
-                <span>3 // Decision Engine</span>
-                <span>Target Execution</span>
+                <span>3 // Today's Decision Engine</span>
+                <span>
+                  Risk Governor: ${sim.circuitBreakerTripped ? 'TRIPPED (FORCE CASH)' : `OK (DD -${sim.currentDrawdownPct.toFixed(1)}% / -${MAX_DD_LIMIT}%)`}
+                </span>
               </div>
-              <div class="flex items-baseline justify-between mt-1 gap-2">
-                <span class="text-lg font-extrabold">${live.action}</span>
-                <span class="text-xs font-bold text-right">${nextOrderText}</span>
+              <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <span class="text-lg font-extrabold">${sim.circuitBreakerTripped ? 'CIRCUIT BREAKER: CASH' : live.action}</span>
+                <span class="text-xs font-bold">${nextOrderText}</span>
               </div>
             </div>
 
-            <!-- 4. SIMULATED TRADE RESULTS (BUY / SELL / QTY / P&L / SEAL) -->
-            <div class="border-t border-slate-800 pt-3">
-              <div class="text-[10px] uppercase text-slate-500 mb-2">
-                4 // Simulated Trade Ledger (Buy Price · Sell Price · Quantity · P&L · Seal)
+            <!-- 4. YESTERDAY'S DECISION AUDIT (LIFTING THE FOG OF WAR) -->
+            <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-2">
+              <div class="flex items-center justify-between text-[10px] uppercase text-slate-500">
+                <span>4 // Latest Settled Decision Audit (${yesterday.date} · ${yesterday.id})</span>
+                <span class="text-slate-600">Seal #${yesterday.seal}</span>
               </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
+              <div class="grid grid-cols-3 gap-2 text-xs pt-0.5">
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Action Taken</span>
+                  <strong class="text-white">${yesterday.signal}</strong>
+                  <span class="block text-[10px] text-slate-400">Spot: ${fmtCompactUSD(yesterday.spotAtIssue, ticker)}</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Inferred → Actual</span>
+                  <span class="text-slate-300">${fmtCompactUSD(yesterday.forecastPrice, ticker)} → <strong class="text-white">${fmtCompactUSD(yesterday.actualPrice, ticker)}</strong></span>
+                  <span class="block text-[10px] ${yesterday.absErrorPct <= 2.5 ? 'text-emerald-400' : 'text-amber-400'}">
+                    Error: ${fmtSignedPct(yesterday.signedErrorPct, 2)}
+                  </span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-500 block">Decision Result</span>
+                  <strong class="${yesterday.callCorrect ? 'text-emerald-400' : 'text-rose-400'}">
+                    ${yesterday.isTrade ? fmtSignedUSD(yesterday.pnl) : yesterday.callSummary}
+                  </strong>
+                  <span class="block text-[10px] text-slate-400">
+                    ${yesterday.isTrade ? `${fmtCompactUSD(yesterday.entryFill, ticker)} → ${fmtCompactUSD(yesterday.exitFill, ticker)}` : '0 Qty (100% Cash)'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. ENGINE TUNING TELEMETRY (BIAS, MAE, CALL ACCURACY) -->
+            <div class="grid grid-cols-3 gap-2 bg-slate-950/70 border border-slate-800/80 rounded-lg p-2.5 text-center">
+              <div>
+                <span class="text-[9px] uppercase text-slate-500 block">Call Accuracy</span>
+                <span class="text-xs font-bold text-cyan-400">${Math.round((sim.correctCalls / sim.totalCalls) * 100)}% (${sim.correctCalls}/${sim.totalCalls})</span>
+              </div>
+              <div class="border-x border-slate-800">
+                <span class="text-[9px] uppercase text-slate-500 block">Mean Forecast Err</span>
+                <span class="text-xs font-bold text-white">±${sim.maePct.toFixed(2)}%</span>
+              </div>
+              <div>
+                <span class="text-[9px] uppercase text-slate-500 block">Model Bias</span>
+                <span class="text-xs font-bold ${Math.abs(sim.biasPct) < 1.5 ? 'text-emerald-400' : 'text-amber-400'}">
+                  ${fmtSignedPct(sim.biasPct, 2)} ${sim.biasPct > 0 ? '(Bull)' : '(Bear)'}
+                </span>
+              </div>
+            </div>
+
+            <!-- 6. ZERO-SCROLLBAR COMPACT DECISION LEDGER -->
+            <div class="border-t border-slate-800 pt-2.5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] uppercase text-slate-500">
+                  5 // Past Decision & Execution Ledger (${visibleRows.length}/${sim.rows.length})
+                </span>
+                <div class="flex items-center gap-1 text-[10px]">
+                  <button onclick="setLedgerFilter('ALL')" class="px-2 py-0.5 rounded border ${ledgerFilter === 'ALL' ? 'bg-slate-800 border-slate-600 text-white' : 'border-slate-800 text-slate-500'}">All (${sim.rows.length})</button>
+                  <button onclick="setLedgerFilter('TRADES')" class="px-2 py-0.5 rounded border ${ledgerFilter === 'TRADES' ? 'bg-slate-800 border-slate-600 text-white' : 'border-slate-800 text-slate-500'}">Trades (${sim.executedTrades})</button>
+                  <button onclick="setLedgerFilter('HIDE')" class="px-2 py-0.5 rounded border ${ledgerFilter === 'HIDE' ? 'bg-slate-800 border-slate-600 text-white' : 'border-slate-800 text-slate-500'}">Hide</button>
+                </div>
+              </div>
+
+              ${ledgerFilter === "HIDE" ? "" : `
+                <table class="w-full table-fixed text-left text-xs border-collapse">
                   <thead>
                     <tr class="text-[10px] text-slate-500 uppercase border-b border-slate-800">
-                      <th class="py-1.5 pr-2">Date</th>
-                      <th class="py-1.5 px-2">Inferred → Actual</th>
-                      <th class="py-1.5 px-2">Qty & Buy → Sell Fill</th>
-                      <th class="py-1.5 pl-2 text-right">Trade P&L / Pool</th>
+                      <th class="py-1.5 w-[21%]">Date / Call</th>
+                      <th class="py-1.5 w-[29%] px-1">Inferred → Actual</th>
+                      <th class="py-1.5 w-[27%] px-1">Execution Fill</th>
+                      <th class="py-1.5 w-[23%] text-right">P&L / Pool</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-800/60">
-                    ${descRows.map(r => `
+                    ${visibleRows.map(r => `
                       <tr>
-                        <td class="py-2 pr-2 text-slate-400 whitespace-nowrap">
-                          ${r.date}
-                          <span class="block text-[10px] text-slate-500">${r.signal}</span>
-                          <span class="block text-[9px] ${r.sealValid ? 'text-slate-600' : 'text-rose-400 font-bold'}">
+                        <td class="py-2 pr-1 align-top">
+                          <span class="text-slate-300 font-semibold block truncate">${r.date}</span>
+                          <span class="text-[10px] ${r.isTrade ? 'text-emerald-400' : 'text-slate-500'} block truncate">${r.signal}</span>
+                          <span class="text-[9px] ${r.sealValid ? 'text-slate-600' : 'text-rose-400 font-bold'} block">
                             ${r.sealValid ? '#' + r.seal : 'TAMPERED'}
                           </span>
                         </td>
-                        <td class="py-2 px-2 text-slate-300 whitespace-nowrap">
-                          ${fmtUSD(r.forecastPrice)} → <strong class="text-white">${fmtUSD(r.actualPrice)}</strong>
+                        <td class="py-2 px-1 align-top">
+                          <span class="text-slate-400 text-[11px] block">${fmtCompactUSD(r.forecastPrice, ticker)}</span>
+                          <strong class="text-white text-[11px] block">→ ${fmtCompactUSD(r.actualPrice, ticker)}</strong>
+                          <span class="text-[9px] text-slate-500 block">Err: ${fmtSignedPct(r.signedErrorPct, 1)}</span>
                         </td>
-                        <td class="py-2 px-2 whitespace-nowrap">
+                        <td class="py-2 px-1 align-top">
                           ${r.isTrade ? `
-                            <span class="text-white font-semibold block">${fmtQty(r.qty, ticker)}</span>
-                            <span class="text-[10px] text-slate-400">
-                              Buy ${fmtUSD(r.entryFill)} → Sell ${fmtUSD(r.exitFill)}
+                            <span class="text-white font-semibold text-[11px] block truncate">${fmtQty(r.qty, ticker)}</span>
+                            <span class="text-[10px] text-slate-400 block leading-tight">
+                              ${fmtCompactUSD(r.entryFill, ticker)} → ${fmtCompactUSD(r.exitFill, ticker)}
                             </span>
                           ` : `
-                            <span class="text-slate-500">0 Qty (No Trade)</span>
+                            <span class="text-slate-500 text-[11px] block">0 Qty (Cash)</span>
+                            <span class="text-[9px] ${r.callCorrect ? 'text-emerald-400/80' : 'text-amber-400/80'} block">
+                              ${r.callSummary}
+                            </span>
                           `}
                         </td>
-                        <td class="py-2 pl-2 text-right whitespace-nowrap">
-                          <span class="font-bold block ${
+                        <td class="py-2 pl-1 text-right align-top">
+                          <span class="font-bold text-[11px] block ${
                             !r.isTrade ? 'text-slate-500' : r.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
                           }">
                             ${r.isTrade ? fmtSignedUSD(r.pnl) : '$0.00'}
                           </span>
-                          <span class="text-[10px] text-slate-500">Pool: ${fmtUSD(r.balanceAfter)}</span>
+                          <span class="text-[10px] text-slate-500 block">${fmtCompactUSD(r.balanceAfter, "BTC-USD")}</span>
                         </td>
                       </tr>
                     `).join("")}
                   </tbody>
                 </table>
-              </div>
+              `}
             </div>
 
           </section>
@@ -258,13 +462,15 @@
       if (brokenSeals.length > 0) {
         banner.classList.remove("hidden");
         banner.innerHTML = `<div class="font-bold">TAMPER ALERT — Historical Row Seal Broken: ${brokenSeals.join(", ")}</div>`;
-        badge.innerHTML = `ROW SEALS: <span class="text-rose-400 font-bold">TAMPERED</span>`;
+        badge.innerHTML = `SEALS: <span class="text-rose-400 font-bold">TAMPERED</span>`;
       } else {
-        badge.innerHTML = `ROW SEALS: <span class="text-cyan-400 font-bold">ALL ${totalRows} LOCKED</span>`;
+        badge.innerHTML = `SEALS: <span class="text-cyan-400 font-bold">ALL ${totalRows} LOCKED</span>`;
       }
 
-      const pct = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
-      document.getElementById("totalWinRate").textContent = `${pct}% (${totalWins}/${totalTrades} Trades)`;
+      const tradeWinPct = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
+      const callAccPct = totalRows > 0 ? Math.round((totalCorrectCalls / totalRows) * 100) : 0;
+      document.getElementById("totalWinRate").textContent = `${tradeWinPct}% (${totalWins}/${totalTrades})`;
+      document.getElementById("totalCallAcc").textContent = `${callAccPct}% (${totalCorrectCalls}/${totalRows})`;
       document.getElementById("grid").innerHTML = colsHtml.join("");
     }
 
